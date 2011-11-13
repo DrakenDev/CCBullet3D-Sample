@@ -1,7 +1,7 @@
 /*
  * CC3OpenGLES11Foundation.m
  *
- * $Version: cocos3d 0.5-beta (eab7e651f462) on 2011-01-31 $
+ * cocos3d 0.6.1
  * Author: Bill Hollings
  * Copyright (c) 2011 The Brenwill Workshop Ltd. All rights reserved.
  * http://www.brenwill.com

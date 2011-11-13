@@ -1,7 +1,7 @@
 /*
  * CC3NodeAnimation.h
  *
- * $Version: cocos3d 0.5.2 (f3df37821a3f) on 2011-03-13 $
+ * cocos3d 0.6.1
  * Author: Bill Hollings
  * Copyright (c) 2011 The Brenwill Workshop Ltd. All rights reserved.
  * http://www.brenwill.com

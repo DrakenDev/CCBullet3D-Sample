@@ -1,7 +1,7 @@
 /*
  * CC3OpenGLES11Engine.m
  *
- * $Version: cocos3d 0.5-beta (eab7e651f462) on 2011-01-31 $
+ * cocos3d 0.6.1
  * Author: Bill Hollings
  * Copyright (c) 2010-2011 The Brenwill Workshop Ltd. All rights reserved.
  * http://www.brenwill.com
@@ -42,6 +42,8 @@
 @synthesize matrices;
 @synthesize vertices;
 @synthesize state;
+@synthesize fog;
+@synthesize hints;
 @synthesize appExtensions;
 
 -(void) dealloc {
@@ -54,6 +56,8 @@
 	[matrices release];
 	[vertices release];
 	[state release];
+	[fog release];
+	[hints release];
 	[appExtensions release];
 	
 	[super dealloc];
@@ -66,12 +70,14 @@
 		self.platform = [CC3OpenGLES11Platform tracker];
 		self.serverCapabilities = [CC3OpenGLES11ServerCapabilities tracker];
 		self.clientCapabilities = [CC3OpenGLES11ClientCapabilities tracker];
-		self.materials = [CC3OpenGLES11Materials tracker];
-		self.textures = [CC3OpenGLES11Textures tracker];
 		self.lighting = [CC3OpenGLES11Lighting tracker];
 		self.matrices = [CC3OpenGLES11Matrices tracker];
 		self.vertices = [CC3OpenGLES11VertexArrays tracker];
+		self.materials = [CC3OpenGLES11Materials tracker];
+		self.textures = [CC3OpenGLES11Textures tracker];	// Must init after matrices
 		self.state = [CC3OpenGLES11State tracker];
+		self.fog = [CC3OpenGLES11Fog tracker];
+		self.hints = [CC3OpenGLES11Hints tracker];
 		self.appExtensions = nil;
 	}
 	return self;
@@ -104,6 +110,8 @@ static CC3OpenGLES11Engine* engine;
 	[matrices open];
 	[vertices open];
 	[state open];
+	[fog open];
+	[hints open];
 	[appExtensions open];
 }
 
@@ -119,7 +127,27 @@ static CC3OpenGLES11Engine* engine;
 	[matrices close];
 	[vertices close];
 	[state close];
+	[fog close];
+	[hints close];
 	[appExtensions close];
+}
+
+-(NSString*) description {
+	NSMutableString* desc = [NSMutableString stringWithCapacity: 600];
+	[desc appendFormat: @"%@:", [self class]];
+	[desc appendFormat: @"\n%@ ", platform];
+	[desc appendFormat: @"\n%@ ", serverCapabilities];
+	[desc appendFormat: @"\n%@ ", clientCapabilities];
+	[desc appendFormat: @"\n%@ ", materials];
+	[desc appendFormat: @"\n%@ ", textures];
+	[desc appendFormat: @"\n%@ ", lighting];
+	[desc appendFormat: @"\n%@ ", matrices];
+	[desc appendFormat: @"\n%@ ", vertices];
+	[desc appendFormat: @"\n%@ ", state];
+	[desc appendFormat: @"\n%@ ", fog];
+	[desc appendFormat: @"\n%@ ", hints];
+	[desc appendFormat: @"\n%@ ", appExtensions];
+	return desc;
 }
 
 @end

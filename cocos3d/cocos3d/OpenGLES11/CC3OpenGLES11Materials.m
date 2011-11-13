@@ -1,7 +1,7 @@
 /*
  * CC3OpenGLES11Materials.m
  *
- * $Version: cocos3d 0.5-beta (eab7e651f462) on 2011-01-31 $
+ * cocos3d 0.6.1
  * Author: Bill Hollings
  * Copyright (c) 2010-2011 The Brenwill Workshop Ltd. All rights reserved.
  * http://www.brenwill.com
@@ -123,6 +123,11 @@
 			 NSStringFromGLEnum(destinationBlend.name), NSStringFromGLEnum(destinationBlend.value));
 }
 
+-(NSString*) description {
+	return [NSString stringWithFormat: @"%@:\n    %@\n    %@",
+			[self class], sourceBlend, destinationBlend];
+}
+
 @end
 
 
@@ -175,6 +180,18 @@
 	[emissionColor close];
 	[shininess close];
 	[blend close];
+}
+
+-(NSString*) description {
+	NSMutableString* desc = [NSMutableString stringWithCapacity: 500];
+	[desc appendFormat: @"%@:", [self class]];
+	[desc appendFormat: @"\n    %@ ", ambientColor];
+	[desc appendFormat: @"\n    %@ ", diffuseColor];
+	[desc appendFormat: @"\n    %@ ", specularColor];
+	[desc appendFormat: @"\n    %@ ", emissionColor];
+	[desc appendFormat: @"\n    %@ ", shininess];
+	[desc appendFormat: @"\n    %@ ", blend];
+	return desc;
 }
 
 @end

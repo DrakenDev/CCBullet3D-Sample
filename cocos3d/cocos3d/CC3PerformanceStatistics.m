@@ -1,7 +1,7 @@
 /*
  * CC3PerformanceStatistics.m
  *
- * $Version: cocos3d 0.5.3 (dc0d1961822d) on 2011-04-05 $
+ * cocos3d 0.6.1
  * Author: Bill Hollings
  * Copyright (c) 2011 The Brenwill Workshop Ltd. All rights reserved.
  * http://www.brenwill.com

@@ -1,7 +1,7 @@
 /*
  * CC3OpenGLES11Platform.m
  *
- * $Version: cocos3d 0.5-beta (eab7e651f462) on 2011-01-31 $
+ * cocos3d 0.6.1
  * Author: Bill Hollings
  * Copyright (c) 2011 The Brenwill Workshop Ltd. All rights reserved.
  * http://www.brenwill.com
@@ -39,12 +39,12 @@
 
 @synthesize maxLights;
 @synthesize maxClipPlanes;
-@synthesize maxTextureChannels;
+@synthesize maxTextureUnits;
 
 -(void) dealloc {
 	[maxLights release];
 	[maxClipPlanes release];
-	[maxTextureChannels release];
+	[maxTextureUnits release];
 	[super dealloc];
 }
 
@@ -53,7 +53,7 @@
 											  andOriginalValueHandling: kCC3GLESStateOriginalValueReadOnce];
 	self.maxClipPlanes = [CC3OpenGLES11StateTrackerInteger trackerForState: GL_MAX_CLIP_PLANES
 												  andOriginalValueHandling: kCC3GLESStateOriginalValueReadOnce];
-	self.maxTextureChannels = [CC3OpenGLES11StateTrackerInteger trackerForState: GL_MAX_TEXTURE_UNITS
+	self.maxTextureUnits = [CC3OpenGLES11StateTrackerInteger trackerForState: GL_MAX_TEXTURE_UNITS
 													   andOriginalValueHandling: kCC3GLESStateOriginalValueReadOnce];
 
 	[self open];		// Automatically load the GL values at start-up
@@ -63,14 +63,23 @@
 	LogTrace("Opening %@", [self class]);
 	[maxLights open];
 	[maxClipPlanes open];
-	[maxTextureChannels open];
+	[maxTextureUnits open];
 }
 
 -(void) close {
 	LogTrace("Closing %@", [self class]);
 	[maxLights close];
 	[maxClipPlanes close];
-	[maxTextureChannels close];
+	[maxTextureUnits close];
+}
+
+-(NSString*) description {
+	NSMutableString* desc = [NSMutableString stringWithCapacity: 200];
+	[desc appendFormat: @"%@:", [self class]];
+	[desc appendFormat: @"\n    %@ ", maxLights];
+	[desc appendFormat: @"\n    %@ ", maxClipPlanes];
+	[desc appendFormat: @"\n    %@ ", maxTextureUnits];
+	return desc;
 }
 
 @end

@@ -1,7 +1,7 @@
 /*
  * CC3Layer.m
  *
- * $Version: cocos3d 0.5.3 (dc0d1961822d) on 2011-04-05 $
+ * cocos3d 0.6.1
  * Author: Bill Hollings
  * Copyright (c) 2010-2011 The Brenwill Workshop Ltd. All rights reserved.
  * http://www.brenwill.com
@@ -34,7 +34,6 @@
 	
 @interface CC3Layer (TemplateMethods)
 -(void) updateViewport;
--(void) drawBackdrop;
 -(void) drawWorld;
 -(int) touchPriority;
 -(BOOL) handleTouch: (UITouch*) touch ofType: (uint) touchType;
@@ -42,18 +41,26 @@
 
 @implementation CC3Layer
 
-@synthesize cc3World;
+@synthesize cc3World, shouldAlwaysUpdateViewport;
 
 - (void)dealloc {
 	[cc3World release];
     [super dealloc];
 }
 
-/** Overridden to update the viewport of the new world. */
+/**
+ * Overridden to link the world back here as well, update the viewport of the new world,
+ * and to start and stop actions. */
 -(void) setCc3World: (CC3World*) aWorld {
-	[cc3World autorelease];		// Release old after new is retained, in case it's same object.
-	cc3World = [aWorld retain];
-	[self updateViewport];
+	cc3World.isRunning = NO;				// Stop actions in old world.
+	cc3World.cc3Layer = nil;				// Detach this layer from old world.
+	[cc3World autorelease];					// Release old after new is retained, in case it's same object.
+
+	cc3World = [aWorld retain];				// Retain the new world.
+	cc3World.cc3Layer = self;				// Point the world back here
+	[self updateViewport];					// Set the camera viewport
+	cc3World.isRunning = self.isRunning;	// Start actions in new world.
+	[cc3World updateWorld];					// Update the new world to ensure transforms have been calculated.
 }
 
 -(NSString*) description {
@@ -66,6 +73,7 @@
 /** Overridden to invoke the initializeControls template method. */
 -(void) initInitialState {
 	[super initInitialState];
+	shouldAlwaysUpdateViewport = NO;
 	[self initializeControls];
 }
 
@@ -108,8 +116,14 @@
 	[super draw];
 }
 
-/** Draws the 3D world by delegating to the visit method of the contained CC3World instance. */
+/**
+ * Draws the 3D world by delegating to the visit method of the contained CC3World instance.
+ * If the shouldAlwaysUpdateViewport property is set to YES, then the viewport is updated first.
+ */
 -(void) drawWorld {
+	if (shouldAlwaysUpdateViewport) {
+		[self updateViewport];
+	}
 	[cc3World drawWorld];
 }
 
@@ -117,12 +131,22 @@
 #pragma mark ControllableCCLayer support
 
 /**
- * Invoked from cocos2D when this layer is first displayed.
- * Updates the device orientation in the 3D world.
+ * Invoked from cocos2d when this layer is first displayed.
+ * Updates the device orientation in the 3D world, and starts it running.
  */
 -(void) onEnter {
 	[super onEnter];
 	[self updateViewport];
+	[cc3World play];
+}
+
+/**
+ * Invoked from cocos2d when this layer is removed.
+ * Pauses the 3D world.
+ */
+-(void) onExit {
+	[super onExit];
+	[cc3World pause];
 }
 
 /**
