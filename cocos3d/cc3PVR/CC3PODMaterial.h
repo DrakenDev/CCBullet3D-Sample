@@ -1,7 +1,7 @@
 /*
  * CC3PODMaterial.h
  *
- * $Version: cocos3d 0.5-beta (eab7e651f462) on 2011-01-31 $
+ * cocos3d 0.6.1
  * Author: Bill Hollings
  * Copyright (c) 2010-2011 The Brenwill Workshop Ltd. All rights reserved.
  * http://www.brenwill.com
@@ -37,14 +37,7 @@
 /** A CC3Material whose content originates from POD resource data. */
 @interface CC3PODMaterial : CC3Material {
 	int podIndex;
-	int podTextureIndex;
 }
-
-/**
- * The index of the texture in the POD file used by this node.
- * This value will be -1 if the material has no texture.
- */
-@property(nonatomic, assign) int podTextureIndex;
 
 /**
  * Allocates and initializes an autoreleased instance from the data of

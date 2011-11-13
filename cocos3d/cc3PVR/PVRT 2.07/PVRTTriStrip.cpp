@@ -71,7 +71,7 @@ public:
 	CTri	*pAdj[3];
 	bool	bInStrip;
 
-	const unsigned short	*pIdx;		// three indices for the tri
+	const unsigned int	*pIdx;		// three indices for the tri
 	bool					bOutput;
 
 public:
@@ -98,7 +98,7 @@ protected:
 
 public:
 	CStrip(
-		const unsigned short	* const pwTriList,
+		const unsigned int	* const pui32TriList,
 		const unsigned int		nTriCnt);
 	~CStrip();
 
@@ -113,7 +113,7 @@ public:
 	void StripImprove();
 
 	void Output(
-		unsigned short	**ppwStrips,
+		unsigned int	**ppui32Strips,
 		unsigned int	**ppnStripLen,
 		unsigned int	*pnStripCnt);
 };
@@ -291,11 +291,11 @@ static int TakeTri(
 					(along it's specified edge) with the compare triangle.
 *****************************************************************************/
 static bool TryLinkEdge(
-	CTri					&src,
-	CTri					&cmp,
-	const int				nSrcEdge,
-	const unsigned short	idx0,
-	const unsigned short	idx1)
+	CTri				&src,
+	CTri				&cmp,
+	const int			nSrcEdge,
+	const unsigned int	idx0,
+	const unsigned int	idx1)
 {
 	int nCmpEdge;
 
@@ -313,8 +313,8 @@ static bool TryLinkEdge(
 ** Code: Class: CStrip
 ****************************************************************************/
 CStrip::CStrip(
-	const unsigned short	* const pwTriList,
-	const unsigned int		nTriCnt)
+	const unsigned int	* const pui32TriList,
+	const unsigned int	nTriCnt)
 {
 	unsigned int	i, j;
 	bool			b0, b1, b2;
@@ -328,7 +328,7 @@ CStrip::CStrip(
 	for(i = 0; i < nTriCnt; ++i)
 	{
 		// Set pointer to indices
-		m_pTri[i].pIdx = &pwTriList[3 * i];
+		m_pTri[i].pIdx = &pui32TriList[3 * i];
 
 		b0 = false;
 		b1 = false;
@@ -557,7 +557,7 @@ void CStrip::StripFromEdges()
 		if(nTest != 2)
 			continue;
 
-		while(true)
+		for(;;)
 		{
 			// A tri with two empty edges is a corner (there are other corners too, but this works so...)
 			while(StripGrow(*pTri, nEdge, -1)) {};
@@ -685,18 +685,18 @@ void CStrip::StripImprove()
 }
 /*!***************************************************************************
  @Function			Output
- @Output			ppwStrips
+ @Output			ppui32Strips
  @Output			ppnStripLen			The length of the strip
  @Output			pnStripCnt
  @Description		Outputs key information about the strip to the output
 					parameters.
 *****************************************************************************/
 void CStrip::Output(
-	unsigned short	**ppwStrips,
+	unsigned int	**ppui32Strips,
 	unsigned int	**ppnStripLen,
 	unsigned int	*pnStripCnt)
 {
-	unsigned short	*pwStrips;
+	unsigned int	*pui32Strips;
 	unsigned int	*pnStripLen;
 	unsigned int	i, j, nIdx, nStrip;
 	CTri			*pTri;
@@ -705,7 +705,7 @@ void CStrip::Output(
 		Output Strips
 	*/
 	pnStripLen = (unsigned int*)malloc(m_nStrips * sizeof(*pnStripLen));
-	pwStrips = (unsigned short*)malloc((m_nTriCnt + m_nStrips * 2) * sizeof(*pwStrips));
+	pui32Strips = (unsigned int*)malloc((m_nTriCnt + m_nStrips * 2) * sizeof(*pui32Strips));
 	nStrip = 0;
 	nIdx = 0;
 	for(i = 0; i < m_nTriCnt; ++i)
@@ -719,9 +719,9 @@ void CStrip::Output(
 
 		if(!pTri->sNew.pFwd)
 		{
-			pwStrips[nIdx++] = pTri->pIdx[0];
-			pwStrips[nIdx++] = pTri->pIdx[1];
-			pwStrips[nIdx++] = pTri->pIdx[2];
+			pui32Strips[nIdx++] = pTri->pIdx[0];
+			pui32Strips[nIdx++] = pTri->pIdx[1];
+			pui32Strips[nIdx++] = pTri->pIdx[2];
 			pnStripLen[nStrip] = 1;
 			pTri->bOutput = true;
 		}
@@ -729,19 +729,19 @@ void CStrip::Output(
 		{
 			if(pTri->sNew.pFwd == pTri->pAdj[0])
 			{
-				pwStrips[nIdx++] = pTri->pIdx[2];
-				pwStrips[nIdx++] = pTri->pIdx[0];
+				pui32Strips[nIdx++] = pTri->pIdx[2];
+				pui32Strips[nIdx++] = pTri->pIdx[0];
 			}
 			else if(pTri->sNew.pFwd == pTri->pAdj[1])
 			{
-				pwStrips[nIdx++] = pTri->pIdx[0];
-				pwStrips[nIdx++] = pTri->pIdx[1];
+				pui32Strips[nIdx++] = pTri->pIdx[0];
+				pui32Strips[nIdx++] = pTri->pIdx[1];
 			}
 			else
 			{
 				_ASSERT(pTri->sNew.pFwd == pTri->pAdj[2]);
-				pwStrips[nIdx++] = pTri->pIdx[1];
-				pwStrips[nIdx++] = pTri->pIdx[2];
+				pui32Strips[nIdx++] = pTri->pIdx[1];
+				pui32Strips[nIdx++] = pTri->pIdx[2];
 			}
 
 			pnStripLen[nStrip] = 0;
@@ -756,28 +756,28 @@ void CStrip::Output(
 				for(j = 0; j < 3; ++j)
 				{
 					if(
-						(pwStrips[nIdx-2] != pTri->pIdx[j]) &&
-						(pwStrips[nIdx-1] != pTri->pIdx[j]))
+						(pui32Strips[nIdx-2] != pTri->pIdx[j]) &&
+						(pui32Strips[nIdx-1] != pTri->pIdx[j]))
 					{
 						break;
 					}
 				}
 				_ASSERT(j != 3);
-				pwStrips[nIdx++] = pTri->pIdx[j];
+				pui32Strips[nIdx++] = pTri->pIdx[j];
 
 				// Double-check that the previous three indices are the indices of this tris (in some order)
 				_ASSERT(
-					((pwStrips[nIdx-3] == pTri->pIdx[0]) && (pwStrips[nIdx-2] == pTri->pIdx[1]) && (pwStrips[nIdx-1] == pTri->pIdx[2])) ||
-					((pwStrips[nIdx-3] == pTri->pIdx[1]) && (pwStrips[nIdx-2] == pTri->pIdx[2]) && (pwStrips[nIdx-1] == pTri->pIdx[0])) ||
-					((pwStrips[nIdx-3] == pTri->pIdx[2]) && (pwStrips[nIdx-2] == pTri->pIdx[0]) && (pwStrips[nIdx-1] == pTri->pIdx[1])) ||
-					((pwStrips[nIdx-3] == pTri->pIdx[2]) && (pwStrips[nIdx-2] == pTri->pIdx[1]) && (pwStrips[nIdx-1] == pTri->pIdx[0])) ||
-					((pwStrips[nIdx-3] == pTri->pIdx[1]) && (pwStrips[nIdx-2] == pTri->pIdx[0]) && (pwStrips[nIdx-1] == pTri->pIdx[2])) ||
-					((pwStrips[nIdx-3] == pTri->pIdx[0]) && (pwStrips[nIdx-2] == pTri->pIdx[2]) && (pwStrips[nIdx-1] == pTri->pIdx[1])));
+					((pui32Strips[nIdx-3] == pTri->pIdx[0]) && (pui32Strips[nIdx-2] == pTri->pIdx[1]) && (pui32Strips[nIdx-1] == pTri->pIdx[2])) ||
+					((pui32Strips[nIdx-3] == pTri->pIdx[1]) && (pui32Strips[nIdx-2] == pTri->pIdx[2]) && (pui32Strips[nIdx-1] == pTri->pIdx[0])) ||
+					((pui32Strips[nIdx-3] == pTri->pIdx[2]) && (pui32Strips[nIdx-2] == pTri->pIdx[0]) && (pui32Strips[nIdx-1] == pTri->pIdx[1])) ||
+					((pui32Strips[nIdx-3] == pTri->pIdx[2]) && (pui32Strips[nIdx-2] == pTri->pIdx[1]) && (pui32Strips[nIdx-1] == pTri->pIdx[0])) ||
+					((pui32Strips[nIdx-3] == pTri->pIdx[1]) && (pui32Strips[nIdx-2] == pTri->pIdx[0]) && (pui32Strips[nIdx-1] == pTri->pIdx[2])) ||
+					((pui32Strips[nIdx-3] == pTri->pIdx[0]) && (pui32Strips[nIdx-2] == pTri->pIdx[2]) && (pui32Strips[nIdx-1] == pTri->pIdx[1])));
 
 				// Check that the latest three indices are not degenerate
-				_ASSERT(pwStrips[nIdx-1] != pwStrips[nIdx-2]);
-				_ASSERT(pwStrips[nIdx-1] != pwStrips[nIdx-3]);
-				_ASSERT(pwStrips[nIdx-2] != pwStrips[nIdx-3]);
+				_ASSERT(pui32Strips[nIdx-1] != pui32Strips[nIdx-2]);
+				_ASSERT(pui32Strips[nIdx-1] != pui32Strips[nIdx-3]);
+				_ASSERT(pui32Strips[nIdx-2] != pui32Strips[nIdx-3]);
 
 				pTri->bOutput = true;
 
@@ -819,7 +819,7 @@ void CStrip::Output(
 
 	// Output data
 	*pnStripCnt		= m_nStrips;
-	*ppwStrips		= pwStrips;
+	*ppui32Strips		= pui32Strips;
 	*ppnStripLen	= pnStripLen;
 }
 
@@ -829,21 +829,21 @@ void CStrip::Output(
 
 /*!***************************************************************************
  @Function			PVRTTriStrip
- @Output			ppwStrips
+ @Output			ppui32Strips
  @Output			ppnStripLen
  @Output			pnStripCnt
- @Input				pwTriList
+ @Input				pui32TriList
  @Input				nTriCnt
  @Description		Reads a triangle list and generates an optimised triangle strip.
 *****************************************************************************/
 void PVRTTriStrip(
-	unsigned short			**ppwStrips,
+	unsigned int			**ppui32Strips,
 	unsigned int			**ppnStripLen,
 	unsigned int			*pnStripCnt,
-	const unsigned short	* const pwTriList,
+	const unsigned int	* const pui32TriList,
 	const unsigned int		nTriCnt)
 {
-	unsigned short	*pwStrips;
+	unsigned int	*pui32Strips;
 	unsigned int	*pnStripLen;
 	unsigned int	nStripCnt;
 
@@ -859,7 +859,7 @@ void PVRTTriStrip(
 #endif
 		; ++i)
 	{
-		CStrip stripper(pwTriList, nTriCnt);
+		CStrip stripper(pui32TriList, nTriCnt);
 
 #ifdef RND_TRIS_ORDER
 		srand(i);
@@ -867,23 +867,23 @@ void PVRTTriStrip(
 
 		stripper.StripFromEdges();
 		stripper.StripImprove();
-		stripper.Output(&pwStrips, &pnStripLen, &nStripCnt);
+		stripper.Output(&pui32Strips, &pnStripLen, &nStripCnt);
 
 		if(!i || nStripCnt < *pnStripCnt)
 		{
 			if(i)
 			{
-				FREE(*ppwStrips);
+				FREE(*ppui32Strips);
 				FREE(*ppnStripLen);
 			}
 
-			*ppwStrips		= pwStrips;
+			*ppui32Strips		= pui32Strips;
 			*ppnStripLen	= pnStripLen;
 			*pnStripCnt		= nStripCnt;
 		}
 		else
 		{
-			FREE(pwStrips);
+			FREE(pui32Strips);
 			FREE(pnStripLen);
 		}
 	}
@@ -891,53 +891,53 @@ void PVRTTriStrip(
 
 /*!***************************************************************************
  @Function			PVRTTriStripList
- @Modified			pwTriList
+ @Modified			pui32TriList
  @Input				nTriCnt
  @Description		Reads a triangle list and generates an optimised triangle strip.
  					Result is converted back to a triangle list.
 *****************************************************************************/
-void PVRTTriStripList(unsigned short * const pwTriList, const unsigned int nTriCnt)
+void PVRTTriStripList(unsigned int * const pui32TriList, const unsigned int nTriCnt)
 {
-	unsigned short	*pwStrips;
+	unsigned int	*pui32Strips;
 	unsigned int	*pnStripLength;
 	unsigned int	nNumStrips;
-	unsigned short	*pwTriPtr, *pwStripPtr;
+	unsigned int	*pui32TriPtr, *pui32StripPtr;
 
 	/*
 		Strip the geometry
 	*/
-	PVRTTriStrip(&pwStrips, &pnStripLength, &nNumStrips, pwTriList, nTriCnt);
+	PVRTTriStrip(&pui32Strips, &pnStripLength, &nNumStrips, pui32TriList, nTriCnt);
 
 	/*
 		Convert back to a triangle list
 	*/
-	pwStripPtr	= pwStrips;
-	pwTriPtr	= pwTriList;
+	pui32StripPtr	= pui32Strips;
+	pui32TriPtr	= pui32TriList;
 	for(unsigned int i = 0; i < nNumStrips; ++i)
 	{
-		*pwTriPtr++ = *pwStripPtr++;
-		*pwTriPtr++ = *pwStripPtr++;
-		*pwTriPtr++ = *pwStripPtr++;
+		*pui32TriPtr++ = *pui32StripPtr++;
+		*pui32TriPtr++ = *pui32StripPtr++;
+		*pui32TriPtr++ = *pui32StripPtr++;
 
 		for(unsigned int j = 1; j < pnStripLength[i]; ++j)
 		{
 			// Use two indices from previous triangle, flipping tri order alternately.
 			if(j & 0x01)
 			{
-				*pwTriPtr++ = pwStripPtr[-1];
-				*pwTriPtr++ = pwStripPtr[-2];
+				*pui32TriPtr++ = pui32StripPtr[-1];
+				*pui32TriPtr++ = pui32StripPtr[-2];
 			}
 			else
 			{
-				*pwTriPtr++ = pwStripPtr[-2];
-				*pwTriPtr++ = pwStripPtr[-1];
+				*pui32TriPtr++ = pui32StripPtr[-2];
+				*pui32TriPtr++ = pui32StripPtr[-1];
 			}
 
-			*pwTriPtr++ = *pwStripPtr++;
+			*pui32TriPtr++ = *pui32StripPtr++;
 		}
 	}
 
-	free(pwStrips);
+	free(pui32Strips);
 	free(pnStripLength);
 }
 

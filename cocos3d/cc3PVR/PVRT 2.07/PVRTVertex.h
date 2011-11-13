@@ -38,7 +38,8 @@ enum EPVRTDataType {
 	EPODDataByte,
 	EPODDataByteNorm,
 	EPODDataUnsignedByteNorm,
-	EPODDataUnsignedShortNorm
+	EPODDataUnsignedShortNorm,
+	EPODDataUnsignedInt
 };
 
 /*****************************************************************************
@@ -128,7 +129,7 @@ void PVRTVertexTangentBitangent(
  @Function			PVRTVertexGenerateTangentSpace
  @Output			pnVtxNumOut			Output vertex count
  @Output			pVtxOut				Output vertices (program must free() this)
- @Modified			pwIdx				input AND output; index array for triangle list
+ @Modified			pui32Idx			input AND output; index array for triangle list
  @Input				nVtxNum				Input vertex count
  @Input				pVtx				Input vertices
  @Input				nStride				Size of a vertex (in bytes)
@@ -156,23 +157,23 @@ void PVRTVertexTangentBitangent(
 					the vertex will be split.
 *****************************************************************************/
 EPVRTError PVRTVertexGenerateTangentSpace(
-	int				* const pnVtxNumOut,
+	unsigned int	* const pnVtxNumOut,
 	char			** const pVtxOut,
-	unsigned short	* const pwIdx,
-	const int		nVtxNum,
+	unsigned int	* const pui32Idx,
+	const unsigned int	nVtxNum,
 	const char		* const pVtx,
-	const int		nStride,
-	const int		nOffsetPos,
+	const unsigned int	nStride,
+	const unsigned int	nOffsetPos,
 	EPVRTDataType	eTypePos,
-	const int		nOffsetNor,
+	const unsigned int	nOffsetNor,
 	EPVRTDataType	eTypeNor,
-	const int		nOffsetTex,
+	const unsigned int	nOffsetTex,
 	EPVRTDataType	eTypeTex,
-	const int		nOffsetTan,
+	const unsigned int	nOffsetTan,
 	EPVRTDataType	eTypeTan,
-	const int		nOffsetBin,
+	const unsigned int	nOffsetBin,
 	EPVRTDataType	eTypeBin,
-	const int		nTriNum,
+	const unsigned int	nTriNum,
 	const float		fSplitDifference);
 
 

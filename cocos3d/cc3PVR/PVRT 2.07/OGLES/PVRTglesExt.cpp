@@ -45,25 +45,6 @@
 /****************************************************************************
 ** Local code
 ****************************************************************************/
-#if defined(__APPLE__)
-// the extensions supported on the iPhone are treated as core functions of gl
-// so use this macro to assign the function pointers in this class appropriately.
-#define PVRGetProcAddress(x) ::x
-#else
-#if defined(EGL_NOT_PRESENT) || (defined(__BADA__) && defined(_X86_)) // Bada simulator
-
-#if defined(__PALMPDK__)
-#include "SDL.h"
-
-#define PVRGetProcAddress(x) SDL_GLES_GetProcAddress(#x)
-#else
-#define PVRGetProcAddress(x) NULL
-#endif
-
-#else
-#define PVRGetProcAddress(x) eglGetProcAddress(#x)
-#endif
-#endif
 
 /****************************************************************************
 ** Class: CPVRTglesExt
@@ -135,6 +116,10 @@ void CPVRTglesExt::LoadExtensions()
 	glPointSizePointerOES = 0;
     glQueryMatrixxOES = 0;
 	glDiscardFramebufferEXT = 0;
+	glBindVertexArrayOES = 0;
+	glDeleteVertexArraysOES = 0;
+	glGenVertexArraysOES = 0;
+	glIsVertexArrayOES = 0;
 
 	const GLubyte *pszGLExtensions;
 
@@ -197,7 +182,7 @@ void CPVRTglesExt::LoadExtensions()
 		glPointSizePointerOES = (PFNGLPOINTSIZEPOINTEROES)PVRGetProcAddress(glPointSizePointerOES);
 	}
 
-#if !defined(__APPLE__)
+#if !defined (TARGET_OS_IPHONE)
 	/* GL_IMG_user_clip_plane */
 	if (strstr((char *)pszGLExtensions, "GL_IMG_user_clip_plane"))
 	{
@@ -262,7 +247,14 @@ void CPVRTglesExt::LoadExtensions()
 		glBlendEquationSeparateOES = (PFNGLBLENDEQUATIONSEPARATEOES)PVRGetProcAddress(glBlendEquationSeparateOES);
 	}
 
-
+	/* GL_OES_vertex_array_object */
+	if (strstr((char *)pszGLExtensions, "GL_OES_vertex_array_object"))
+	{
+        glBindVertexArrayOES = (PFNGLBINDVERTEXARRAYOES) PVRGetProcAddress(glBindVertexArrayOES);
+        glDeleteVertexArraysOES = (PFNGLDELETEVERTEXARRAYSOES) PVRGetProcAddress(glDeleteVertexArraysOES);
+        glGenVertexArraysOES = (PFNGLGENVERTEXARRAYSOES) PVRGetProcAddress(glGenVertexArraysOES);
+		glIsVertexArrayOES = (PFNGLISVERTEXARRAYOES) PVRGetProcAddress(glIsVertexArrayOES);
+	}
 #endif
 
 #if defined(GL_EXT_discard_framebuffer)

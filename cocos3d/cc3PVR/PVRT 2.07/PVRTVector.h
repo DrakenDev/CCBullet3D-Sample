@@ -253,9 +253,7 @@ struct PVRTVec2
 	****************************************************************************/
 	bool operator==(const PVRTVec2& rhs) const
 	{
-		if(x != rhs.x) return false;
-		if(y != rhs.y) return false;
-		return true;
+		return ((x == rhs.x) && (y == rhs.y));
 	}
 
 	/*!***************************************************************************
@@ -266,10 +264,7 @@ struct PVRTVec2
 	****************************************************************************/
 	bool operator!=(const PVRTVec2& rhs) const
 	{
-		if(x == rhs.x)
-			return false;
-
-		return true;
+		return ((x != rhs.x) || (y != rhs.y));
 	}
 
 	// FUNCTIONS
@@ -578,10 +573,7 @@ struct PVRTVec3 : public PVRTVECTOR3
 ****************************************************************************/
 	bool operator==(const PVRTVec3& rhs) const
 	{
-		if(x != rhs.x) return false;
-		if(y != rhs.y) return false;
-		if(z != rhs.z) return false;
-		return true;
+		return ((x == rhs.x) && (y == rhs.y) && (z == rhs.z));
 	}
 
 /*!***************************************************************************
@@ -592,10 +584,7 @@ struct PVRTVec3 : public PVRTVECTOR3
 	****************************************************************************/
 	bool operator!=(const PVRTVec3& rhs) const
 	{
-		if(x == rhs.x)
-			return false;
-
-		return true;
+		return ((x != rhs.x) || (y != rhs.y) || (z != rhs.z));
 	}
 	// FUNCTIONS
 /*!***************************************************************************
@@ -953,14 +942,10 @@ friend PVRTVec4 operator*(const VERTTYPE lhs, const PVRTVec4&  rhs)
  @Returns			true if the two vectors are equal
  @Description		PVRTVec4 equality operator
 ****************************************************************************/
-	bool operator==(const PVRTVec4& rhs) const
-	{
-		if(x != rhs.x) return false;
-		if(y != rhs.y) return false;
-		if(z != rhs.z) return false;
-		if(w != rhs.w) return false;
-		return true;
-	}
+bool operator==(const PVRTVec4& rhs) const
+{
+	return ((x == rhs.x) && (y == rhs.y) && (z == rhs.z) && (w == rhs.w));
+}
 
 /*!***************************************************************************
 @Function			!=
@@ -968,13 +953,10 @@ friend PVRTVec4 operator*(const VERTTYPE lhs, const PVRTVec4&  rhs)
 @Returns			true if the two vectors are not equal
 @Description		PVRTVec4 inequality operator
 	****************************************************************************/
-	bool operator!=(const PVRTVec3& rhs) const
-	{
-		if(x == rhs.x)
-			return false;
-
-		return true;
-	}
+bool operator!=(const PVRTVec4& rhs) const
+{
+	return ((x != rhs.x) || (y != rhs.y) || (z != rhs.z) || (w != rhs.w));
+}
 /*!***************************************************************************
 ** Functions
 ****************************************************************************/
@@ -1113,7 +1095,7 @@ struct PVRTMat3 : public PVRTMATRIX3
  @Input				row			row of matrix
  @Input				column		column of matrix
  @Returns			value of element
- @Description		Returns the value of the element at the specified row and column 
+ @Description		Returns the value of the element at the specified row and column
 					of the PVRTMat3
 *****************************************************************************/
 	VERTTYPE& operator()(const int row, const int column)
@@ -1125,7 +1107,7 @@ struct PVRTMat3 : public PVRTMATRIX3
  @Input				row			row of matrix
  @Input				column		column of matrix
  @Returns			value of element
- @Description		Returns the value of the element at the specified row and column 
+ @Description		Returns the value of the element at the specified row and column
 					of the PVRTMat3
 *****************************************************************************/
 	const VERTTYPE& operator()(const int row, const int column) const
@@ -1438,8 +1420,8 @@ struct PVRTMat3 : public PVRTMATRIX3
 	static PVRTMat3 Scale(const VERTTYPE fx,const VERTTYPE fy,const VERTTYPE fz)
 	{
 		return PVRTMat3(fx,0,0,
-			0,fy,0,
-			0,0,fz);
+						0,fy,0,
+						0,0,fz);
 	}
 
 /*!***************************************************************************
@@ -1464,8 +1446,8 @@ struct PVRTMat3 : public PVRTMATRIX3
 	static PVRTMat3 Translation2D(const VERTTYPE tx, const VERTTYPE ty)
 	{
 		return PVRTMat3( f2vt(1),    0,  0,
-			0,    f2vt(1),  0,
-			tx,  ty,  f2vt(1));
+						 0,    f2vt(1),  0,
+						tx,  		ty,  f2vt(1));
 	}
 
 };

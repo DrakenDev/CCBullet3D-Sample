@@ -290,6 +290,8 @@ struct SPODScene {
 	SPODMaterial	*pMaterial;		/*!< Material array */
 
 	unsigned int	nNumFrame;		/*!< Number of frames of animation */
+	unsigned int	nFPS;			/*!< The frames per second the animation should be played at */
+
 	unsigned int	nFlags;			/*!< PVRTMODELPODSF_* bit-flags */
 };
 
@@ -875,6 +877,17 @@ void PVRTModelPODCopyLight(const SPODLight &in, SPODLight &out);
 					type.
 *****************************************************************************/
 EPVRTError PVRTModelPODFlattenToWorldSpace(CPVRTModelPOD &in, CPVRTModelPOD &out);
+
+
+/*!***************************************************************************
+ @Function			PVRTModelPODMergeMaterials
+ @Input				src - Source scene
+ @Output			dst - Destination scene
+ @Description		This function takes two scenes and merges the textures,
+					PFX effects and blending parameters from the src materials
+					into the dst materials if they have the same material name.
+*****************************************************************************/
+EPVRTError PVRTModelPODMergeMaterials(const CPVRTModelPOD &src, CPVRTModelPOD &dst);
 
 #endif /* _PVRTMODELPOD_H_ */
 

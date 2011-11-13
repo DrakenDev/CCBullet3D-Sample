@@ -21,10 +21,15 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "PVRTGlobal.h"
 
 const size_t CPVRTString::npos = (size_t) -1;
+
+#if defined(_WIN32) && !defined(__BADA__)
+#define vsnprintf _vsnprintf
+#endif
 
 /*!***********************************************************************
 @Function			CPVRTString
@@ -843,14 +848,14 @@ size_t CPVRTString::find_last_not_of(const char* _Ptr, size_t _Off) const
 {
 	for(size_t i=m_Size-_Off-1;i<m_Size;--i)
 	{
-		bool bFound = false;
+		bool bFound = true;
 		// compare against each char from _Ptr
 		for(size_t j=0;_Ptr[j]!=0;++j)
 		{
-			bFound = bFound || (m_pString[i]!=_Ptr[j]);
+			bFound = bFound && (m_pString[i]!=_Ptr[j]);
 		}
-		if(!bFound)
-		{	// return if no match
+		if(bFound)
+		{	// return if considered character differed from all characters from _Ptr
 			return i;
 		}
 	}
@@ -869,14 +874,15 @@ size_t CPVRTString::find_last_not_of(const char* _Ptr, size_t _Off, size_t _Coun
 {
 	for(size_t i=m_Size-_Off-1;i<m_Size;--i)
 	{
-		bool bFound = false;
+		bool bFound = true;
 		// compare against each char from _Ptr
 		for(size_t j=0;j<_Count;++j)
 		{
-			bFound = bFound || (m_pString[i]!=_Ptr[j]);
+			bFound = bFound && (m_pString[i]!=_Ptr[j]);
 		}
-		if(!bFound)
-		{	// return if no match
+		if(bFound)
+		{
+		    // return if considered character differed from all characters from _Ptr
 			return i;
 		}
 	}
@@ -894,14 +900,15 @@ size_t CPVRTString::find_last_not_of(const CPVRTString& _Str, size_t _Off) const
 {
 	for(size_t i=m_Size-_Off-1;i<m_Size;--i)
 	{
-		bool bFound = false;
+		bool bFound = true;
 		// compare against each char from _Ptr
 		for(size_t j=0;j<_Str.m_Size;++j)
 		{
-			bFound = bFound || (m_pString[i]!=_Str[j]);
+			bFound = bFound && (m_pString[i]!=_Str[j]);
 		}
-		if(!bFound)
-		{	// return if no match
+		if(bFound)
+		{
+            // return if considered character differed from all characters from _Ptr
 			return i;
 		}
 	}
@@ -1358,10 +1365,47 @@ CPVRTString PVRTStringGetFileName(const CPVRTString& strFilePath)
 ************************************************************************/
 CPVRTString PVRTStringStripWhiteSpaceFromStartOf(const CPVRTString& strLine)
 {
-	size_t start = strLine.find_first_not_of(" \t	");
+	size_t start = strLine.find_first_not_of(" \t	\n\r");
 	if(start!=strLine.npos)
-		return strLine.substr(start,strLine.length()-start);
+		return strLine.substr(start,strLine.length()-(start));
 	return strLine;
+}
+
+
+/*!***********************************************************************
+@Function			PVRTStringStripWhiteSpaceFromEndOf
+@Input				strLine A string
+@Returns			Result of the white space stripping
+@Description		strips white space characters from the end of a CPVRTString.
+************************************************************************/
+CPVRTString PVRTStringStripWhiteSpaceFromEndOf(const CPVRTString& strLine)
+{
+	size_t end = strLine.find_last_not_of(" \t	\n\r");
+	if(end!=strLine.npos)
+		return strLine.substr(0,end+1);
+	return strLine;
+}
+
+/*!***********************************************************************
+@Function			PVRTStringFromFormattedStr
+@Input				pFormat A string containing the formating
+@Returns			A formatted string
+@Description		Creates a formatted string
+************************************************************************/
+CPVRTString PVRTStringFromFormattedStr(const char *pFormat, ...)
+{
+	va_list arg;
+	char	buf[1024];
+
+	va_start(arg, pFormat);
+#if defined(__SYMBIAN32__) || defined(UITRON) || defined(_UITRON_)
+	vsprintf(buf, pFormat, arg);
+#else
+	vsnprintf(buf, 1024, pFormat, arg);
+#endif
+	va_end(arg);
+
+	return buf;
 }
 
 ///*!***************************************************************************

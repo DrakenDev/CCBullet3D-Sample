@@ -976,6 +976,8 @@ void CBlockOption::Add(
 	const CBlockOption	* const pSrc,
 	const CObject		* const pOb)
 {
+	PVRT_UNREFERENCED_PARAMETER(pOb);
+
 	int i;
 
 	// Add vertices from job to block
@@ -1354,7 +1356,7 @@ static void SortVertices(
 	// Let's get on with it then.
 	for(i = 0; i < nIdxNum; ++i) {
 		if(pnVtxDest[pwIdx[i]] == -1) {
-			_ASSERT(wNext < nVertNum);
+			_ASSERT((int) wNext < nVertNum);
 			memcpy((char*)pVtxNew+(wNext*nStride), (char*)pVtxData+(pwIdx[i]*nStride), nStride);
 			pnVtxDest[pwIdx[i]] = wNext++;
 		}
@@ -1369,7 +1371,7 @@ static void SortVertices(
 		In that situation vertex sorting should be performed only once after
 		all the tri sorting is finished, not per tri-sort.
 	*/
-	_ASSERT(wNext == nVertNum);
+	_ASSERT((int) wNext == nVertNum);
 	memcpy(pVtxData, pVtxNew, nVertNum * nStride);
 
 	FREE(pnVtxDest);

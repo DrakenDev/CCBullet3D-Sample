@@ -20,7 +20,7 @@
 /****************************************************************************
 ** Defines
 ****************************************************************************/
-#define PVRTGEOMETRY_IDX	unsigned short
+#define PVRTGEOMETRY_IDX	unsigned int
 
 #define PVRTGEOMETRY_SORT_VERTEXCACHE (0x01	/* Sort triangles for optimal vertex cache usage */)
 #define PVRTGEOMETRY_SORT_IGNOREVERTS (0x02	/* Do not sort vertices for optimal memory cache usage */)

@@ -740,6 +740,21 @@ CPVRTString PVRTStringGetFileName(const CPVRTString& strFilePath);
 ************************************************************************/
 CPVRTString PVRTStringStripWhiteSpaceFromStartOf(const CPVRTString& strLine);
 
+/*!***********************************************************************
+@Function			PVRTStringStripWhiteSpaceFromEndOf
+@Input				strLine A string
+@Returns			Result of the white space stripping
+@Description		strips white space characters from the end of a CPVRTString.
+************************************************************************/
+CPVRTString PVRTStringStripWhiteSpaceFromEndOf(const CPVRTString& strLine);
+
+/*!***********************************************************************
+@Function			PVRTStringFromFormattedStr
+@Input				pFormat A string containing the formating
+@Returns			A formatted string
+@Description		Creates a formatted string
+************************************************************************/
+CPVRTString PVRTStringFromFormattedStr(const char *pFormat, ...);
 
 #endif // _PVRTSTRING_H_
 

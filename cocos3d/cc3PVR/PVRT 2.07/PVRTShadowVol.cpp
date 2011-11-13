@@ -41,7 +41,10 @@
 ****************************************************************************/
 struct SVertexShVol {
 	float	x, y, z;
-	unsigned int	dwExtrude;
+	unsigned int dwExtrude;
+#if defined(BUILD_OGLES)
+	float fWeight;
+#endif
 };
 
 /****************************************************************************
@@ -127,13 +130,14 @@ static unsigned short FindOrCreateVertex(PVRTShadowVolShadowMesh * const psMesh,
 				it is appended to the edge array and the array cound is incremented.
 				The index in the array of the new edge is then returned.
 ****************************************************************************/
-static PVRTShadowVolMEdge *FindOrCreateEdge(PVRTShadowVolShadowMesh * const psMesh, const PVRTVECTOR3 * const pv0, const PVRTVECTOR3 * const pv1) {
+static unsigned int FindOrCreateEdge(PVRTShadowVolShadowMesh * const psMesh, const PVRTVECTOR3 * const pv0, const PVRTVECTOR3 * const pv1) {
 	unsigned int	nCurr;
 	unsigned short			wV0, wV1;
-
+	
 	wV0 = FindOrCreateVertex(psMesh, pv0);
 	wV1 = FindOrCreateVertex(psMesh, pv1);
 
+	
 	/*
 		First check whether we already have a edge here
 	*/
@@ -142,8 +146,8 @@ static PVRTShadowVolMEdge *FindOrCreateEdge(PVRTShadowVolShadowMesh * const psMe
 			(psMesh->pE[nCurr].wV0 == wV0 && psMesh->pE[nCurr].wV1 == wV1) ||
 			(psMesh->pE[nCurr].wV0 == wV1 && psMesh->pE[nCurr].wV1 == wV0))
 		{
-			/* Don't do anything more if the edge already exists */
-			return &psMesh->pE[nCurr];
+			/* Don't do anything more if the edge already exists */						
+			return nCurr;
 		}
 	}
 
@@ -154,7 +158,7 @@ static PVRTShadowVolMEdge *FindOrCreateEdge(PVRTShadowVolShadowMesh * const psMe
 	psMesh->pE[psMesh->nE].wV1	= wV1;
 	psMesh->pE[psMesh->nE].nVis	= 0;
 
-	return &psMesh->pE[psMesh->nE++];
+	return psMesh->nE++;
 }
 
 /****************************************************************************
@@ -206,15 +210,13 @@ static void FindOrCreateTriangle(
 {
 	unsigned int	nCurr;
 	PVRTShadowVolMEdge	*psE0, *psE1, *psE2;
+	unsigned int wE0, wE1, wE2;
 
-	psE0 = FindOrCreateEdge(psMesh, pv0, pv1);
-	psE1 = FindOrCreateEdge(psMesh, pv1, pv2);
-	psE2 = FindOrCreateEdge(psMesh, pv2, pv0);
-	_ASSERT(psE0);
-	_ASSERT(psE1);
-	_ASSERT(psE2);
-
-	if(psE0 == psE1 || psE1 == psE2 || psE2 == psE0) {
+	wE0 = FindOrCreateEdge(psMesh, pv0, pv1);
+	wE1 = FindOrCreateEdge(psMesh, pv1, pv2);
+	wE2 = FindOrCreateEdge(psMesh, pv2, pv0);
+	
+	if(wE0 == wE1 || wE1 == wE2 || wE2 == wE0) {
 		/* Don't add degenerate triangles */
 		_RPT0(_CRT_WARN, "FindOrCreateTriangle() Degenerate triangle.\n");
 		return;
@@ -225,9 +227,9 @@ static void FindOrCreateTriangle(
 	*/
 	for(nCurr = 0; nCurr < psMesh->nT; nCurr++) {
 		if(
-			(psMesh->pT[nCurr].pE0 == psE0 || psMesh->pT[nCurr].pE0 == psE1 || psMesh->pT[nCurr].pE0 == psE2) &&
-			(psMesh->pT[nCurr].pE1 == psE0 || psMesh->pT[nCurr].pE1 == psE1 || psMesh->pT[nCurr].pE1 == psE2) &&
-			(psMesh->pT[nCurr].pE2 == psE0 || psMesh->pT[nCurr].pE2 == psE1 || psMesh->pT[nCurr].pE2 == psE2))
+			(psMesh->pT[nCurr].wE0 == wE0 || psMesh->pT[nCurr].wE0 == wE1 || psMesh->pT[nCurr].wE0 == wE2) &&
+			(psMesh->pT[nCurr].wE1 == wE0 || psMesh->pT[nCurr].wE1 == wE1 || psMesh->pT[nCurr].wE1 == wE2) &&
+			(psMesh->pT[nCurr].wE2 == wE0 || psMesh->pT[nCurr].wE2 == wE1 || psMesh->pT[nCurr].wE2 == wE2))
 		{
 			/* Don't do anything more if the triangle already exists */
 			return;
@@ -237,9 +239,13 @@ static void FindOrCreateTriangle(
 	/*
 		Add the triangle then!
 	*/
-	psMesh->pT[psMesh->nT].pE0 = psE0;
-	psMesh->pT[psMesh->nT].pE1 = psE1;
-	psMesh->pT[psMesh->nT].pE2 = psE2;
+	psMesh->pT[psMesh->nT].wE0 = wE0;
+	psMesh->pT[psMesh->nT].wE1 = wE1;
+	psMesh->pT[psMesh->nT].wE2 = wE2;
+
+	psE0 = &psMesh->pE[wE0];
+	psE1 = &psMesh->pE[wE1];
+	psE2 = &psMesh->pE[wE2];
 
 	/*
 		Store the triangle indices; these are indices into the shadow mesh, not the source model indices
@@ -341,13 +347,13 @@ void PVRTShadowVolMeshCreateMesh(
 			nCurr = 0;
 
 			for(nTri = 0; nTri < psMesh->nT; nTri++) {
-				if(psMesh->pT[nTri].pE0 == &psMesh->pE[nEdge])
+				if(psMesh->pT[nTri].wE0 == nEdge)
 					nCurr++;
 
-				if(psMesh->pT[nTri].pE1 == &psMesh->pE[nEdge])
+				if(psMesh->pT[nTri].wE1 == nEdge)
 					nCurr++;
 
-				if(psMesh->pT[nTri].pE2 == &psMesh->pE[nEdge])
+				if(psMesh->pT[nTri].wE2 == nEdge)
 					nCurr++;
 			}
 
@@ -379,13 +385,16 @@ bool PVRTShadowVolMeshInitMesh(
 #endif
 	SVertexShVol	*pvData;
 
-#ifdef BUILD_OGL
+#if defined(BUILD_OGL)
 	_ASSERT(pContext && pContext->pglExt);
 
 	if(!pContext || !pContext->pglExt)
 		return false;
 #endif
 
+#if defined(BUILD_OGLES2) || defined(BUILD_OGLES)
+	PVRT_UNREFERENCED_PARAMETER(pContext);
+#endif
 	_ASSERT(psMesh);
 	_ASSERT(psMesh->nV);
 	_ASSERT(psMesh->nE);
@@ -397,7 +406,7 @@ bool PVRTShadowVolMeshInitMesh(
 	_ASSERT(psMesh->pivb == NULL);
 	_RPT3(_CRT_WARN, "ShadowMeshInitMesh() %5d byte VB (%3dv x 2 x size(%d))\n", psMesh->nV * 2 * sizeof(*pvData), psMesh->nV, sizeof(*pvData));
 
-#ifdef BUILD_DX9
+#if defined(BUILD_DX9)
 	hRes = pContext->pDev->CreateVertexBuffer(psMesh->nV * 2 * sizeof(*pvData), D3DUSAGE_WRITEONLY, 0, D3DPOOL_DEFAULT, &psMesh->pivb, NULL);
 	if(FAILED(hRes)) {
 		_ASSERT(false);
@@ -411,7 +420,7 @@ bool PVRTShadowVolMeshInitMesh(
 	}
 #endif
 
-#ifdef BUILD_DX10
+#if defined(BUILD_DX10)
 	pvData = (SVertexShVol*)psMesh->pivb;
 #endif
 
@@ -429,15 +438,19 @@ bool PVRTShadowVolMeshInitMesh(
 		pvData[nCurr].z			= psMesh->pV[nCurr].z;
 		pvData[nCurr].dwExtrude = 0;
 
+#if defined(BUILD_OGLES)
+		pvData[nCurr].fWeight = 1;
+		pvData[nCurr + psMesh->nV].fWeight = 1;
+#endif
 		pvData[nCurr + psMesh->nV]				= pvData[nCurr];
 		pvData[nCurr + psMesh->nV].dwExtrude	= 0x04030201;		// Order is wzyx
 	}
 
-#ifdef BUILD_DX9
+#if defined(BUILD_DX9)
 	psMesh->pivb->Unlock();
 #endif
 
-#ifdef BUILD_DX10
+#if defined(BUILD_DX10)
 	D3D10_BUFFER_DESC sBufDesc;
 	sBufDesc.ByteWidth		= psMesh->nV * 2 * sizeof(*pvData);
 	sBufDesc.Usage			= D3D10_USAGE_IMMUTABLE;
@@ -472,10 +485,12 @@ bool PVRTShadowVolMeshInitVol(
 	const PVRTShadowVolShadowMesh	* const psMesh,
 	const SPVRTContext		* const pContext)
 {
-#ifdef BUILD_DX9
+#if defined(BUILD_DX9)
 	HRESULT hRes;
 #endif
-
+#if defined(BUILD_OGLES2) || defined(BUILD_OGLES) || defined(BUILD_OGL)
+	PVRT_UNREFERENCED_PARAMETER(pContext);
+#endif
 	_ASSERT(psVol);
 	_ASSERT(psMesh);
 	_ASSERT(psMesh->nV);
@@ -487,10 +502,10 @@ bool PVRTShadowVolMeshInitVol(
 	/*
 		Allocate a index buffer for the shadow volumes
 	*/
-#ifdef _DEBUG
+#if defined(_DEBUG)
 	psVol->nIdxCntMax = psMesh->nT * 2 * 3;
 #endif
-#ifdef BUILD_DX9
+#if defined(BUILD_DX9)
 	hRes = pContext->pDev->CreateIndexBuffer(psMesh->nT * 2 * 3 * sizeof(unsigned short),
 		D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFMT_INDEX16, D3DPOOL_DEFAULT, &psVol->piib, NULL);
 	if(FAILED(hRes)) {
@@ -526,7 +541,7 @@ void PVRTShadowVolMeshDestroyMesh(
 void PVRTShadowVolMeshReleaseMesh(
 	PVRTShadowVolShadowMesh		* const psMesh)
 {
-#ifdef BUILD_DX9
+#if defined(BUILD_DX9)
 	RELEASE(psMesh->pivb);
 #endif
 #if defined(BUILD_OGL) || defined(BUILD_OGLES) || defined(BUILD_OGLES2)
@@ -542,7 +557,7 @@ void PVRTShadowVolMeshReleaseMesh(
 void PVRTShadowVolMeshReleaseVol(
 	PVRTShadowVolShadowVol			* const psVol)
 {
-#ifdef BUILD_DX9
+#if defined(BUILD_DX9)
 	RELEASE(psVol->piib);
 #endif
 #if defined(BUILD_OGL) || defined(BUILD_OGLES) || defined(BUILD_OGLES2)
@@ -599,7 +614,7 @@ void PVRTShadowVolSilhouetteProjectedBuild(
 		Lock the index buffer; this is where we create the shadow volume
 	*/
 	_ASSERT(psVol && psVol->piib);
-#ifdef BUILD_DX9
+#if defined(BUILD_DX9)
 	hRes = psVol->piib->Lock(0, 0, (void**)&pwIdx, D3DLOCK_DISCARD);
 	_ASSERT(SUCCEEDED(hRes));
 #endif
@@ -613,12 +628,16 @@ void PVRTShadowVolSilhouetteProjectedBuild(
 		Run through triangles, testing which face the From point
 	*/
 	for(nCurr = 0; nCurr < psMesh->nT; nCurr++) {
+		PVRTShadowVolMEdge *pE0, *pE1, *pE2;
 		psTri = &psMesh->pT[nCurr];
+		pE0 = &psMesh->pE[psTri->wE0];
+		pE1 = &psMesh->pE[psTri->wE1];
+		pE2 = &psMesh->pE[psTri->wE2];
 
 		if(bPointLight) {
-			v.x = psMesh->pV[psTri->pE0->wV0].x - pvLightModel->x;
-			v.y = psMesh->pV[psTri->pE0->wV0].y - pvLightModel->y;
-			v.z = psMesh->pV[psTri->pE0->wV0].z - pvLightModel->z;
+			v.x = psMesh->pV[pE0->wV0].x - pvLightModel->x;
+			v.y = psMesh->pV[pE0->wV0].y - pvLightModel->y;
+			v.z = psMesh->pV[pE0->wV0].z - pvLightModel->z;
 			f = PVRTMatrixVec3DotProduct(psTri->vNormal, v);
 		} else {
 			f = PVRTMatrixVec3DotProduct(psTri->vNormal, *pvLightModel);
@@ -626,9 +645,9 @@ void PVRTShadowVolSilhouetteProjectedBuild(
 
 		if(f >= 0) {
 			/* Triangle is in the light */
-			psTri->pE0->nVis |= 0x01;
-			psTri->pE1->nVis |= 0x01;
-			psTri->pE2->nVis |= 0x01;
+			pE0->nVis |= 0x01;
+			pE1->nVis |= 0x01;
+			pE2->nVis |= 0x01;
 
 			if(dwVisFlags & PVRTSHADOWVOLUME_NEED_CAP_FRONT) {
 				// Add the triangle to the volume, unextruded.
@@ -639,9 +658,9 @@ void PVRTShadowVolSilhouetteProjectedBuild(
 			}
 		} else {
 			/* Triangle is in shade; set Bit3 if the winding order needs reversed */
-			psTri->pE0->nVis |= 0x02 | (psTri->nWinding & 0x01) << 2;
-			psTri->pE1->nVis |= 0x02 | (psTri->nWinding & 0x02) << 1;
-			psTri->pE2->nVis |= 0x02 | (psTri->nWinding & 0x04);
+			pE0->nVis |= 0x02 | (psTri->nWinding & 0x01) << 2;
+			pE1->nVis |= 0x02 | (psTri->nWinding & 0x02) << 1;
+			pE2->nVis |= 0x02 | (psTri->nWinding & 0x04);
 
 			if(dwVisFlags & PVRTSHADOWVOLUME_NEED_CAP_BACK) {
 				// Add the triangle to the volume, extruded.
@@ -655,7 +674,7 @@ void PVRTShadowVolSilhouetteProjectedBuild(
 		}
 	}
 
-#ifdef _DEBUG
+#if defined(_DEBUG)
 	_ASSERT(psVol->nIdxCnt <= psVol->nIdxCntMax);
 	for(nCurr = 0; nCurr < psVol->nIdxCnt; ++nCurr) {
 		_ASSERT(pwIdx[nCurr] < psMesh->nV*2);
@@ -700,17 +719,17 @@ void PVRTShadowVolSilhouetteProjectedBuild(
 		psEdge->nVis = 0;
 	}
 
-#ifdef _DEBUG
+#if defined(_DEBUG)
 	_ASSERT(psVol->nIdxCnt <= psVol->nIdxCntMax);
 	for(nCurr = 0; nCurr < psVol->nIdxCnt; ++nCurr) {
 		_ASSERT(pwIdx[nCurr] < psMesh->nV*2);
 	}
 #endif
 
-#ifdef BUILD_DX9
+#if defined(BUILD_DX9)
 	psVol->piib->Unlock();
 #endif
-#ifdef BUILD_DX10
+#if defined(BUILD_DX10)
     D3D10_BUFFER_DESC sIdxBufferDesc;
     sIdxBufferDesc.ByteWidth = psVol->nIdxCnt * sizeof(WORD);
     sIdxBufferDesc.Usage = D3D10_USAGE_DEFAULT;
@@ -1088,6 +1107,9 @@ void PVRTShadowVolBoundingBoxIsVisible(
 	unsigned int	dwClipFlagsA, dwClipZCnt;
 	float			fLightProjZ;
 
+	PVRT_UNREFERENCED_PARAMETER(bObVisible);
+	PVRT_UNREFERENCED_PARAMETER(bNeedsZClipping);
+
 	_ASSERT((bObVisible && bNeedsZClipping) || !bNeedsZClipping);
 
 	/*
@@ -1194,9 +1216,9 @@ void PVRTShadowVolBoundingBoxIsVisible(
 int PVRTShadowVolSilhouetteProjectedRender(
 	const PVRTShadowVolShadowMesh	* const psMesh,
 	const PVRTShadowVolShadowVol	* const psVol,
-	const SPVRTContext		* const pContext)
+	const SPVRTContext				* const pContext)
 {
-#ifdef BUILD_DX9
+#if defined(BUILD_DX9)
 	HRESULT	hRes;
 
 	_ASSERT(psMesh->pivb);
@@ -1212,8 +1234,14 @@ int PVRTShadowVolSilhouetteProjectedRender(
 	return psVol->nIdxCnt / 3;
 #endif
 
-#if defined(BUILD_OGL) || defined(BUILD_OGLES2)
+#if defined(BUILD_OGL) || defined(BUILD_OGLES2) || defined(BUILD_OGLES)
 	_ASSERT(psMesh->pivb);
+
+#if defined(_DEBUG) // To fix error in Linux
+	_ASSERT(psVol->nIdxCnt <= psVol->nIdxCntMax);
+	_ASSERT(psVol->nIdxCnt % 3 == 0);
+	_ASSERT(psVol->nIdxCnt / 3 <= 0xFFFF);
+#endif
 
 #if defined(BUILD_OGL)
 	_ASSERT(pContext && pContext->pglExt);
@@ -1224,11 +1252,7 @@ int PVRTShadowVolSilhouetteProjectedRender(
 	pContext->pglExt->glVertexAttribPointerARB(1, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(SVertexShVol), &((SVertexShVol*)psMesh->pivb)[0].dwExtrude);
 	pContext->pglExt->glEnableVertexAttribArrayARB(1);
 
-#ifdef _DEBUG // To fix error in Linux
-	_ASSERT(psVol->nIdxCnt <= psVol->nIdxCntMax);
-	_ASSERT(psVol->nIdxCnt % 3 == 0);
-	_ASSERT(psVol->nIdxCnt / 3 <= 0xFFFF);
-#endif
+
 
 	glDrawElements(GL_TRIANGLES, psVol->nIdxCnt, GL_UNSIGNED_SHORT, psVol->piib);
 
@@ -1236,8 +1260,9 @@ int PVRTShadowVolSilhouetteProjectedRender(
 	pContext->pglExt->glDisableVertexAttribArrayARB(1);
 
 	return psVol->nIdxCnt / 3;
-
-#elif defined(BUILD_OGLES2)
+#else
+#if defined(BUILD_OGLES2)
+	PVRT_UNREFERENCED_PARAMETER(pContext);
 	GLint i32CurrentProgram;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &i32CurrentProgram);
 
@@ -1249,12 +1274,6 @@ int PVRTShadowVolSilhouetteProjectedRender(
 	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(SVertexShVol), &((SVertexShVol*)psMesh->pivb)[0].dwExtrude);
 	glEnableVertexAttribArray(1);
 
-#ifdef _DEBUG // To fix error in Linux
-	_ASSERT(psVol->nIdxCnt <= psVol->nIdxCntMax);
-	_ASSERT(psVol->nIdxCnt % 3 == 0);
-	_ASSERT(psVol->nIdxCnt / 3 <= 0xFFFF);
-#endif
-
 	glDrawElements(GL_TRIANGLES, psVol->nIdxCnt, GL_UNSIGNED_SHORT, psVol->piib);
 
 	glDisableVertexAttribArray(0);
@@ -1263,23 +1282,31 @@ int PVRTShadowVolSilhouetteProjectedRender(
 	return psVol->nIdxCnt / 3;
 
 #else
-	glVertexAttribPointerARB(6, 4, GL_UNSIGNED_BYTE, false, sizeof(SVertexShVol), &((SVertexShVol*)psMesh->pivb)[0].dwExtrude);
-	glEnableVertexAttribArrayARB(6);
+#if defined(BUILD_OGLES)
+#if defined(__BADA__) && defined(_WIN32)
+	return 0; // The bada simulator is missing the matrix palette defines
+#else
+	_ASSERT(pContext && pContext->pglesExt);
 
-	#ifdef _DEBUG // To fix error in Linux
-		_ASSERT(psVol->nIdxCnt <= psVol->nIdxCntMax);
-		_ASSERT(psVol->nIdxCnt % 3 == 0);
-		_ASSERT(psVol->nIdxCnt / 3 <= 0xFFFF);
-	#endif
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_MATRIX_INDEX_ARRAY_OES);
+	glEnableClientState(GL_WEIGHT_ARRAY_OES);
+
+	glVertexPointer(3, GL_FLOAT, sizeof(SVertexShVol), &((SVertexShVol*)psMesh->pivb)[0].x);
+	pContext->pglesExt->glMatrixIndexPointerOES(1, GL_UNSIGNED_BYTE, sizeof(SVertexShVol), &((SVertexShVol*)psMesh->pivb)[0].dwExtrude);
+	pContext->pglesExt->glWeightPointerOES(1, GL_FLOAT, sizeof(SVertexShVol), &((SVertexShVol*)psMesh->pivb)[0].fWeight);
 
 	glDrawElements(GL_TRIANGLES, psVol->nIdxCnt, GL_UNSIGNED_SHORT, psVol->piib);
 
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_MATRIX_INDEX_ARRAY_OES);
+	glDisableClientState(GL_WEIGHT_ARRAY_OES);
+
 	return psVol->nIdxCnt / 3;
 #endif
-	
-#elif defined(BUILD_OGLES)		// patched by Bill Hollings
-	return 0;					// patched by Bill Hollings
-	
+#endif
+#endif
+#endif
 #endif
 }
 

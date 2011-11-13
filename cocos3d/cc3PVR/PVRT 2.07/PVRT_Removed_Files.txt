@@ -26,4 +26,5 @@ OGLES/PVRTPrint3DPVRLogo.h
 The following files were patched to make compatible with cocos3d usage:
 
 PVRTGlobal.h			- added BUILD_OGLES declaration
-PVRTShadowVol.cpp		- added BUILD_OGLES return statement
+OGLES/PVRTContext.h		- added TARGET_OS_IPHONE declaration
+

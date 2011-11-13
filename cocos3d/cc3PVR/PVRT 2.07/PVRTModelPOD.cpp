@@ -71,6 +71,7 @@ enum EPODFileName
 	ePODFileTexture,	// Will come multiple times
 	ePODFileMaterial,	// Will come multiple times
 	ePODFileFlags,
+	ePODFileFPS,
 
 	ePODFileMatName				= 3000,
 	ePODFileMatIdxTexDiffuse,
@@ -622,10 +623,10 @@ static bool WriteFileSafe32(FILE *pFile, const unsigned int * const lpBuffer, co
 
 		for(unsigned int i = 0; i < nSize; ++i)
 		{
-			ub[0] = lpBuffer[i];
-			ub[1] = lpBuffer[i] >> 8;
-			ub[2] = lpBuffer[i] >> 16;
-			ub[3] = lpBuffer[i] >> 24;
+			ub[0] = (unsigned char) (lpBuffer[i]);
+			ub[1] = (unsigned char) (lpBuffer[i] >> 8);
+			ub[2] = (unsigned char) (lpBuffer[i] >> 16);
+			ub[3] = (unsigned char) (lpBuffer[i] >> 24);
 
 			bRet &= (fwrite(ub, 4, 1, pFile) == 1);
 		}
@@ -963,6 +964,7 @@ static bool WritePOD(
 		if(!WriteData32(pFile, ePODFileNumTexture, &s.nNumTexture)) return false;
 		if(!WriteData32(pFile, ePODFileNumMaterial,	&s.nNumMaterial)) return false;
 		if(!WriteData32(pFile, ePODFileNumFrame, &s.nNumFrame)) return false;
+		if(!WriteData32(pFile, ePODFileFPS, &s.nFPS)) return false;
 		if(!WriteData32(pFile, ePODFileFlags, &s.nFlags)) return false;
 		// Save: cameras
 		for(i = 0; i < s.nNumCamera; ++i)
@@ -1602,6 +1604,7 @@ static bool ReadScene(
 {
 	unsigned int nName, nLen;
 	unsigned int nCameras=0, nLights=0, nMaterials=0, nMeshes=0, nTextures=0, nNodes=0;
+	s.nFPS = 30;
 
 	while(src.ReadMarker(nName, nLen))
 	{
@@ -1626,6 +1629,7 @@ static bool ReadScene(
 		case ePODFileNumTexture:		if(!src.Read32(s.nNumTexture)) return false;			if(!SafeAlloc(s.pTexture, s.nNumTexture)) return false;		break;
 		case ePODFileNumMaterial:		if(!src.Read32(s.nNumMaterial)) return false;			if(!SafeAlloc(s.pMaterial, s.nNumMaterial)) return false;	break;
 		case ePODFileNumFrame:			if(!src.Read32(s.nNumFrame)) return false;			break;
+		case ePODFileFPS:				if(!src.Read32(s.nFPS))	return false;				break;
 		case ePODFileFlags:				if(!src.Read32(s.nFlags)) return false;				break;
 
 		case ePODFileCamera:	if(!ReadCamera(s.pCamera[nCameras++], src)) return false;		break;
@@ -1893,6 +1897,7 @@ EPVRTError CPVRTModelPOD::CopyFromMemory(const SPODScene &scene)
 
 	// SPODScene
 	nNumFrame	= scene.nNumFrame;
+	nFPS		= scene.nFPS;
 	nFlags		= scene.nFlags;
 
 	for(i = 0; i < 3; ++i)
@@ -2884,8 +2889,8 @@ EPVRTError CPVRTModelPOD::CreateSkinIdxWeight(
 	// Return indices and weights as bytes
 	for(i = 0; i < 4; ++i)
 	{
-		pIdx[i]		= nIdx[i];
-		pWeight[i]	= nWeight[i];
+		pIdx[i]		= (char) nIdx[i];
+		pWeight[i]	= (char) nWeight[i];
 	}
 #endif
 
@@ -2931,6 +2936,7 @@ size_t PVRTModelPODDataTypeSize(const EPVRTDataType type)
 	case EPODDataFloat:
 		return sizeof(float);
 	case EPODDataInt:
+	case EPODDataUnsignedInt:
 		return sizeof(int);
 	case EPODDataShort:
 	case EPODDataShortNorm:
@@ -2973,6 +2979,7 @@ size_t PVRTModelPODDataTypeComponentCount(const EPVRTDataType type)
 
 	case EPODDataFloat:
 	case EPODDataInt:
+	case EPODDataUnsignedInt:
 	case EPODDataShort:
 	case EPODDataShortNorm:
 	case EPODDataUnsignedShort:
@@ -3028,6 +3035,7 @@ void PVRTModelPODDataConvert(CPODData &data, const unsigned int nCnt, const EPVR
 	{
 	case EPODDataFloat:
 	case EPODDataInt:
+	case EPODDataUnsignedInt:
 	case EPODDataUnsignedShort:
 	case EPODDataUnsignedShortNorm:
 	case EPODDataFixed16_16:
@@ -3118,6 +3126,9 @@ EPVRTError PVRTModelPODScaleAndConvertVtxData(SPODMesh &mesh, const EPVRTDataTyp
 	case EPODDataInt:
 		fUpper = 1 << 30;
 		fLower = -fUpper;
+	break;
+	case EPODDataUnsignedInt:
+		fUpper = 1 << 30;
 	break;
 	case EPODDataShort:
 	case EPODDataFixed16_16:
@@ -3478,6 +3489,8 @@ void PVRTModelPODDeIndex(SPODMesh &mesh)
 	}
 	else
 	{
+		_ASSERT(mesh.sFaces.eType == EPODDataUnsignedInt);
+
 		for(unsigned int i = 0; i < mesh.nNumVertex; ++i)
 			memcpy(pNew + i * mesh.sVertex.nStride, (char*)mesh.pInterleaved + ((unsigned int*)mesh.sFaces.pData)[i] * mesh.sVertex.nStride, mesh.sVertex.nStride);
 	}
@@ -4436,6 +4449,205 @@ EPVRTError PVRTModelPODFlattenToWorldSpace(CPVRTModelPOD &in, CPVRTModelPOD &out
 
 	return PVR_SUCCESS;
 }
+
+bool MergeTexture(const CPVRTModelPOD &src, CPVRTModelPOD &dst, const int &srcTexID, int &dstTexID)
+{
+	if(srcTexID != -1)
+	{
+		if(dstTexID == -1)
+		{
+			// Resize our texture array to add our texture
+			dst.pTexture = (SPODTexture*) realloc(dst.pTexture, (dst.nNumTexture + 1) * sizeof(SPODTexture));
+
+			if(!dst.pTexture)
+				return false;
+
+			dstTexID = dst.nNumTexture;
+			++dst.nNumTexture;
+
+			dst.pTexture[dstTexID].pszName = (char*) malloc(strlen(src.pTexture[srcTexID].pszName) + 1);
+			strcpy(dst.pTexture[dstTexID].pszName, src.pTexture[srcTexID].pszName);
+			return true;
+		}
+
+		// See if our texture names match
+		if(strcmp(src.pTexture[srcTexID].pszName, dst.pTexture[dstTexID].pszName) == 0)
+			return true; // Nothing to do
+
+		// See if our texture filenames match
+		char * srcName = src.pTexture[srcTexID].pszName;
+		char * dstName = dst.pTexture[dstTexID].pszName;
+		bool bFoundPossibleEndOfFilename = false;
+		bool bStrMatch = true, bFilenameMatch = true;
+
+		while(*srcName != '\0' && *dstName != '\0')
+		{
+			if(*srcName != *dstName)
+			{
+				if(!bFoundPossibleEndOfFilename)
+					return true; // They don't match
+
+				bStrMatch = false;
+			}
+
+			if(*srcName == '.')
+			{
+				if(!bStrMatch)
+					return true; // They don't match
+
+				bFoundPossibleEndOfFilename = true;
+				bFilenameMatch = bStrMatch;
+			}
+
+			++srcName;
+			++dstName;
+		}
+
+		if(bFilenameMatch)
+		{
+			// Our filenames match but our extensions don't so merge our textures
+			FREE(dst.pTexture[dstTexID].pszName);
+			dst.pTexture[dstTexID].pszName = (char*) malloc(strlen(src.pTexture[srcTexID].pszName) + 1);
+			strcpy(dst.pTexture[dstTexID].pszName, src.pTexture[srcTexID].pszName);
+			return true;
+		}
+
+		// Our texture names aren't the same so don't try and merge
+	}
+
+	return true;
+}
+
+/*!***************************************************************************
+ @Function			PVRTModelPODMergeMaterials
+ @Input				src - Source scene
+ @Output			dst - Destination scene
+ @Description		This function takes two scenes and merges the textures,
+					PFX effects and blending parameters from the src materials
+					into the dst materials if they have the same material name.
+*****************************************************************************/
+EPVRTError PVRTModelPODMergeMaterials(const CPVRTModelPOD &src, CPVRTModelPOD &dst)
+{
+	if(!src.nNumMaterial || !dst.nNumMaterial)
+		return PVR_SUCCESS;
+
+	bool *bMatched = (bool*) calloc(dst.nNumMaterial, sizeof(bool));
+
+	if(!bMatched)
+		return PVR_FAIL;
+
+	for(unsigned int i = 0; i < src.nNumMaterial; ++i)
+	{
+		const SPODMaterial &srcMaterial = src.pMaterial[i];
+
+		// Match our current material with one in the dst
+		for(unsigned int j = 0; j < dst.nNumMaterial; ++j)
+		{
+			if(bMatched[j])
+				continue; // We have already matched this material with another
+
+			SPODMaterial &dstMaterial = dst.pMaterial[j];
+
+			// We've found a material with the same name
+			if(strcmp(srcMaterial.pszName, dstMaterial.pszName) == 0)
+			{
+				bMatched[j] = true;
+
+				// Merge the textures
+				if(!MergeTexture(src, dst, srcMaterial.nIdxTexDiffuse, dstMaterial.nIdxTexDiffuse))
+				{
+					FREE(bMatched);
+					return PVR_FAIL;
+				}
+
+				if(!MergeTexture(src, dst, srcMaterial.nIdxTexAmbient, dstMaterial.nIdxTexAmbient))
+				{
+					FREE(bMatched);
+					return PVR_FAIL;
+				}
+
+				if(!MergeTexture(src, dst, srcMaterial.nIdxTexSpecularColour, dstMaterial.nIdxTexSpecularColour))
+				{
+					FREE(bMatched);
+					return PVR_FAIL;
+				}
+
+				if(!MergeTexture(src, dst, srcMaterial.nIdxTexSpecularLevel, dstMaterial.nIdxTexSpecularLevel))
+				{
+					FREE(bMatched);
+					return PVR_FAIL;
+				}
+
+				if(!MergeTexture(src, dst, srcMaterial.nIdxTexBump, dstMaterial.nIdxTexBump))
+				{
+					FREE(bMatched);
+					return PVR_FAIL;
+				}
+
+				if(!MergeTexture(src, dst, srcMaterial.nIdxTexEmissive, dstMaterial.nIdxTexEmissive))
+				{
+					FREE(bMatched);
+					return PVR_FAIL;
+				}
+
+				if(!MergeTexture(src, dst, srcMaterial.nIdxTexGlossiness, dstMaterial.nIdxTexGlossiness))
+				{
+					FREE(bMatched);
+					return PVR_FAIL;
+				}
+
+				if(!MergeTexture(src, dst, srcMaterial.nIdxTexOpacity, dstMaterial.nIdxTexOpacity))
+				{
+					FREE(bMatched);
+					return PVR_FAIL;
+				}
+
+				if(!MergeTexture(src, dst, srcMaterial.nIdxTexReflection, dstMaterial.nIdxTexReflection))
+				{
+					FREE(bMatched);
+					return PVR_FAIL;
+				}
+
+				if(!MergeTexture(src, dst, srcMaterial.nIdxTexRefraction, dstMaterial.nIdxTexRefraction))
+				{
+					FREE(bMatched);
+					return PVR_FAIL;
+				}
+
+				dstMaterial.eBlendSrcRGB = srcMaterial.eBlendSrcRGB;
+				dstMaterial.eBlendSrcA = srcMaterial.eBlendSrcA;
+				dstMaterial.eBlendDstRGB = srcMaterial.eBlendDstRGB;
+				dstMaterial.eBlendDstA = srcMaterial.eBlendDstA;
+				dstMaterial.eBlendOpRGB = srcMaterial.eBlendOpRGB;
+				dstMaterial.eBlendOpA = srcMaterial.eBlendOpA;
+				memcpy(dstMaterial.pfBlendColour, srcMaterial.pfBlendColour, 4 * sizeof(VERTTYPE));
+				memcpy(dstMaterial.pfBlendFactor, srcMaterial.pfBlendFactor, 4 * sizeof(VERTTYPE));
+				dstMaterial.nFlags = srcMaterial.nFlags;
+
+				// Merge effect names
+				if(srcMaterial.pszEffectFile)
+				{
+					FREE(dstMaterial.pszEffectFile);
+					dstMaterial.pszEffectFile = (char*) malloc(strlen(srcMaterial.pszEffectFile) + 1);
+					strcpy(dstMaterial.pszEffectFile, srcMaterial.pszEffectFile);
+				}
+
+				if(srcMaterial.pszEffectName)
+				{
+					FREE(dstMaterial.pszEffectName);
+					dstMaterial.pszEffectName = (char*) malloc(strlen(srcMaterial.pszEffectName) + 1);
+					strcpy(dstMaterial.pszEffectName, srcMaterial.pszEffectName);
+				}
+
+				break;
+			}
+		}
+	}
+
+	FREE(bMatched);
+	return PVR_SUCCESS;
+}
+
 /*****************************************************************************
  End of file (PVRTModelPOD.cpp)
 *****************************************************************************/

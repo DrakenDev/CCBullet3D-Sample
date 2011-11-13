@@ -1,7 +1,7 @@
 /*
  * CC3PODLight.mm
  *
- * $Version: cocos3d 0.5.1-beta (fe3ccf79ee58) on 2011-02-23 $
+ * cocos3d 0.6.1
  * Author: Bill Hollings
  * Copyright (c) 2010-2011 The Brenwill Workshop Ltd. All rights reserved.
  * http://www.brenwill.com
@@ -81,7 +81,7 @@ extern "C" {
 		// Get the light content
 		if (self.podContentIndex >= 0) {
 			SPODLight* psl = (SPODLight*)[aPODRez lightPODStructAtIndex: self.podContentIndex];
-			LogTrace(@"Setting %@ parameters from %@", [self class], NSStringFromSPODLight(psl));
+			LogCleanRez(@"Setting %@ parameters from %@", [self class], NSStringFromSPODLight(psl));
 			self.podTargetIndex = psl->nIdxTarget;
 			self.diffuseColor = CCC4FMake(psl->pfColour[0], psl->pfColour[1], psl->pfColour[2], 1.0);
 			self.ambientColor = kCCC4FBlack;

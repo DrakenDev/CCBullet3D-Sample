@@ -16,10 +16,22 @@
 #ifndef _PVRTCONTEXT_H_
 #define _PVRTCONTEXT_H_
 
+// Ensure TARGET_OS_IPHONE directive is defined, instead of
+// requiring all projects to set this compiler directive.
+#ifndef TARGET_OS_IPHONE		// patched by Bill Hollings
+#	define TARGET_OS_IPHONE		// patched by Bill Hollings
+#endif							// patched by Bill Hollings
+
 #include <stdio.h>
 #if defined(__APPLE__)
+#ifdef TARGET_OS_IPHONE
 #import <OpenGLES/ES1/gl.h>
 #import <OpenGLES/ES1/glext.h>
+#else
+#include <EGL/egl.h>
+#include <GLES/gl.h>
+#include <GLES/glext.h>
+#endif
 #else
 #if defined(__BADA__)
 #include <FGraphicsOpengl.h>
@@ -31,6 +43,9 @@ using namespace Osp::Graphics::Opengl;
 #include <GLES/gl.h>
 #endif
 #endif
+
+#include "PVRTglesExt.h"
+
 /****************************************************************************
 ** Macros
 ****************************************************************************/
@@ -53,7 +68,7 @@ using namespace Osp::Graphics::Opengl;
 ****************************************************************************/
 struct SPVRTContext
 {
-	int reserved;	// No context info for OGLES.
+	CPVRTglesExt * pglesExt;
 };
 
 /****************************************************************************

@@ -389,7 +389,7 @@ public:
 ****************************************************************************/
 static bool FillBatch(
 	CBatch					&batch,
-	const unsigned short	* const pwIdx,	// input AND output; index array for triangle list
+	const unsigned int	* const pui32Idx,	// input AND output; index array for triangle list
 	const char				* const pVtx,	// Input vertices
 	const int				nStride,		// Size of a vertex (in bytes)
 	const int				nOffsetWeight,	// Offset in bytes to the vertex bone-weights
@@ -410,7 +410,7 @@ static bool BonesMatch(
  @Function		Create
  @Output		pnVtxNumOut		vertex count
  @Output		pVtxOut			Output vertices (program must free() this)
- @Modified		pwIdx			index array for triangle list
+ @Modified		pui32Idx			index array for triangle list
  @Input			nVtxNum			vertex count
  @Input			pVtx			vertices
  @Input			nStride			Size of a vertex (in bytes)
@@ -427,7 +427,7 @@ static bool BonesMatch(
 EPVRTError CPVRTBoneBatches::Create(
 	int					* const pnVtxNumOut,
 	char				** const pVtxOut,
-	unsigned short		* const pwIdx,
+	unsigned int		* const pui32Idx,
 	const int			nVtxNum,
 	const char			* const pVtx,
 	const int			nStride,
@@ -444,13 +444,13 @@ EPVRTError CPVRTBoneBatches::Create(
 	std::list<CBatch>			lBatch;
 	std::list<CBatch>::iterator	iBatch, iBatch2;
 	CBatch						**ppBatch;
-	unsigned short				*pwIdxNew;
+	unsigned int				*pui32IdxNew;
 	const char					*pV, *pV2;
 	PVRTVECTOR4					vWeight, vIdx;
 	PVRTVECTOR4					vWeight2, vIdx2;
 	std::vector<int>			*pvDup;
 	CGrowableArray				*pVtxBuf;
-	unsigned short				wSrcIdx;
+	unsigned int				ui32SrcIdx;
 
 	memset(this, 0, sizeof(*this));
 
@@ -469,7 +469,7 @@ EPVRTError CPVRTBoneBatches::Create(
 
 	// Allocate some working space
 	ppBatch		= (CBatch**)malloc(nTriNum * sizeof(*ppBatch));
-	pwIdxNew	= (unsigned short*)malloc(nTriNum * 3 * sizeof(*pwIdxNew));
+	pui32IdxNew	= (unsigned int*)malloc(nTriNum * 3 * sizeof(*pui32IdxNew));
 	pvDup		= new std::vector<int>[nVtxNum];
 	pVtxBuf		= new CGrowableArray(nStride);
 
@@ -477,7 +477,7 @@ EPVRTError CPVRTBoneBatches::Create(
 	for(i = 0; i < nTriNum; ++i)
 	{
 		// Build the batch
-		if(!FillBatch(batch, &pwIdx[i * 3], pVtx, nStride, nOffsetWeight, eTypeWeight, nOffsetIdx, eTypeIdx, nVertexBones))
+		if(!FillBatch(batch, &pui32Idx[i * 3], pVtx, nStride, nOffsetWeight, eTypeWeight, nOffsetIdx, eTypeIdx, nVertexBones))
 			return PVR_FAIL;
 
 		// Update the batch list
@@ -510,7 +510,7 @@ EPVRTError CPVRTBoneBatches::Create(
 
 		for(iBatch = lBatch.begin(); iBatch != lBatch.end(); ++iBatch)
 		{
-			while(true)
+			for(;;)
 			{
 				nShortest	= nBatchBoneMax;
 				iBatch2		= iBatch;
@@ -541,7 +541,7 @@ EPVRTError CPVRTBoneBatches::Create(
 	// Place each triangle in a batch.
 	for(i = 0; i < nTriNum; ++i)
 	{
-		if(!FillBatch(batch, &pwIdx[i * 3], pVtx, nStride, nOffsetWeight, eTypeWeight, nOffsetIdx, eTypeIdx, nVertexBones))
+		if(!FillBatch(batch, &pui32Idx[i * 3], pVtx, nStride, nOffsetWeight, eTypeWeight, nOffsetIdx, eTypeIdx, nVertexBones))
 			return PVR_FAIL;
 
 		for(iBatch = lBatch.begin(); iBatch != lBatch.end(); ++iBatch)
@@ -584,10 +584,10 @@ EPVRTError CPVRTBoneBatches::Create(
 
 			for(j = 0; j < 3; ++j)
 			{
-				wSrcIdx = pwIdx[3 * i + j];
+				ui32SrcIdx = pui32Idx[3 * i + j];
 
 				// Get desired bone indices for this vertex/tri
-				pV = &pVtx[wSrcIdx * nStride];
+				pV = &pVtx[ui32SrcIdx * nStride];
 
 				PVRTVertexRead(&vWeight, &pV[nOffsetWeight], eTypeWeight, nVertexBones);
 				PVRTVertexRead(&vIdx, &pV[nOffsetIdx], eTypeIdx, nVertexBones);
@@ -596,30 +596,30 @@ EPVRTError CPVRTBoneBatches::Create(
 				_ASSERT(vIdx.x == 0 || vIdx.x != vIdx.y);
 
 				// Check the list of copies of this vertex for one with suitable bone indices
-				for(k = 0; k < (int)pvDup[wSrcIdx].size(); ++k)
+				for(k = 0; k < (int)pvDup[ui32SrcIdx].size(); ++k)
 				{
-					pV2 = pVtxBuf->at(pvDup[wSrcIdx][k]);
+					pV2 = pVtxBuf->at(pvDup[ui32SrcIdx][k]);
 
 					PVRTVertexRead(&vWeight2, &pV2[nOffsetWeight], eTypeWeight, nVertexBones);
 					PVRTVertexRead(&vIdx2, &pV2[nOffsetIdx], eTypeIdx, nVertexBones);
 
 					if(BonesMatch(&vIdx2.x, &vIdx.x))
 					{
-						pwIdxNew[3 * nTriCnt + j] = pvDup[wSrcIdx][k];
+						pui32IdxNew[3 * nTriCnt + j] = pvDup[ui32SrcIdx][k];
 						break;
 					}
 				}
 
-				if(k != (int)pvDup[wSrcIdx].size())
+				if(k != (int)pvDup[ui32SrcIdx].size())
 					continue;
 
 				//	Did not find a suitable duplicate of the vertex, so create one
 				pVtxBuf->Append(pV, 1);
-				pvDup[wSrcIdx].push_back(pVtxBuf->size() - 1);
+				pvDup[ui32SrcIdx].push_back(pVtxBuf->size() - 1);
 
 				PVRTVertexWrite(&pVtxBuf->last()[nOffsetIdx], eTypeIdx, nVertexBones, &vIdx);
 
-				pwIdxNew[3 * nTriCnt + j] = pVtxBuf->size() - 1;
+				pui32IdxNew[3 * nTriCnt + j] = pVtxBuf->size() - 1;
 			}
 			++nTriCnt;
 		}
@@ -628,7 +628,7 @@ EPVRTError CPVRTBoneBatches::Create(
 	_ASSERTE(nBatchCnt == (int)lBatch.size());
 
 	//	Copy indices to output
-	memcpy(pwIdx, pwIdxNew, nTriNum * 3 * sizeof(*pwIdxNew));
+	memcpy(pui32Idx, pui32IdxNew, nTriNum * 3 * sizeof(*pui32IdxNew));
 
 	//	Move vertices to output
 	*pnVtxNumOut = pVtxBuf->Surrender(pVtxOut);
@@ -637,16 +637,9 @@ EPVRTError CPVRTBoneBatches::Create(
 	delete [] pvDup;
 	delete pVtxBuf;
 	FREE(ppBatch);
-	FREE(pwIdxNew);
+	FREE(pui32IdxNew);
 
-	if(*pnVtxNumOut > 0x0ffff)
-	{
-		*pnVtxNumOut = 0;
-		FREE(*pVtxOut);
-		return PVR_OVERFLOW;
-	}
-	else
-		return PVR_SUCCESS;
+	return PVR_SUCCESS;
 }
 
 /****************************************************************************
@@ -656,7 +649,7 @@ EPVRTError CPVRTBoneBatches::Create(
 /*!***********************************************************************
  @Function		FillBatch
  @Modified		batch 			The batch to fill
- @Input			pwIdx			Input index array for triangle list
+ @Input			pui32Idx		Input index array for triangle list
  @Input			pVtx			Input vertices
  @Input			nStride			Size of a vertex (in bytes)
  @Input			nOffsetWeight	Offset in bytes to the vertex bone-weights
@@ -669,7 +662,7 @@ EPVRTError CPVRTBoneBatches::Create(
 *************************************************************************/
 static bool FillBatch(
 	CBatch					&batch,
-	const unsigned short	* const pwIdx,
+	const unsigned int	* const pui32Idx,
 	const char				* const pVtx,
 	const int				nStride,
 	const int				nOffsetWeight,
@@ -687,7 +680,7 @@ static bool FillBatch(
 	batch.Clear();
 	for(i = 0; i < 3; ++i)
 	{
-		pV = &pVtx[pwIdx[i] * nStride];
+		pV = &pVtx[pui32Idx[i] * nStride];
 
 		memset(&vWeight, 0, sizeof(vWeight));
 		PVRTVertexRead(&vWeight, &pV[nOffsetWeight], eTypeWeight, nVertexBones);

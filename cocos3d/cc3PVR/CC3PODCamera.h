@@ -1,7 +1,7 @@
 /*
  * CC3PODCamera.h
  *
- * $Version: cocos3d 0.5.1-beta (fe3ccf79ee58) on 2011-02-23 $
+ * cocos3d 0.6.1
  * Author: Bill Hollings
  * Copyright (c) 2010-2011 The Brenwill Workshop Ltd. All rights reserved.
  * http://www.brenwill.com

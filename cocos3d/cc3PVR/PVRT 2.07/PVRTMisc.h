@@ -84,6 +84,28 @@ void PVRTCreateSkybox(float scale, bool adjustUV, int textureSize, VERTTYPE** Ve
 *****************************************************************************/
 void PVRTDestroySkybox(VERTTYPE* Vertices, VERTTYPE* UVs);
 
+/*!***************************************************************************
+ @Function		GetPOTHigher
+ @Input			uiOriginalValue	Base value
+ @Input			iTimesHigher		Multiplier
+ @Description	When iTimesHigher is one, this function will return the closest
+				power-of-two value above the base value.
+				For every increment beyond one for the iTimesHigher value,
+				the next highest power-of-two value will be calculated.
+*****************************************************************************/
+unsigned int GetPOTHigher(unsigned int uiOriginalValue, int iTimesHigher);
+
+/*!***************************************************************************
+ @Function		GetPOTLower
+ @Input			uiOriginalValue	Base value
+ @Input			iTimesLower		Multiplier
+ @Description	When iTimesLower is one, this function will return the closest
+				power-of-two value below the base value.
+				For every increment beyond one for the iTimesLower value,
+				the next lowest power-of-two value will be calculated. The lowest
+				value that can be reached is 1.
+*****************************************************************************/
+unsigned int GetPOTLower(unsigned int uiOriginalValue, int iTimesLower);
 
 #endif /* _PVRTMISC_H_ */
 

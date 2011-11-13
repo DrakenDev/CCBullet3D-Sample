@@ -23,29 +23,29 @@
 
 /*!***************************************************************************
  @Function			PVRTTriStrip
- @Output			ppwStrips
+ @Output			ppui32Strips
  @Output			ppnStripLen
  @Output			pnStripCnt
- @Input				pwTriList
+ @Input				pui32TriList
  @Input				nTriCnt
  @Description		Reads a triangle list and generates an optimised triangle strip.
 *****************************************************************************/
 void PVRTTriStrip(
-	unsigned short			**ppwStrips,
+	unsigned int			**ppui32Strips,
 	unsigned int			**ppnStripLen,
 	unsigned int			*pnStripCnt,
-	const unsigned short	* const pwTriList,
+	const unsigned int	* const pui32TriList,
 	const unsigned int		nTriCnt);
 
 
 /*!***************************************************************************
  @Function			PVRTTriStripList
- @Modified			pwTriList
+ @Modified			pui32TriList
  @Input				nTriCnt
  @Description		Reads a triangle list and generates an optimised triangle strip. Result is
  					converted back to a triangle list.
 *****************************************************************************/
-void PVRTTriStripList(unsigned short * const pwTriList, const unsigned int nTriCnt);
+void PVRTTriStripList(unsigned int * const pui32TriList, const unsigned int nTriCnt);
 
 
 #endif /* _PVRTTRISTRIP_H_ */

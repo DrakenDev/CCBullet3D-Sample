@@ -1,7 +1,7 @@
 /*
  * ControllableCCLayer.m
  *
- * $Version: cocos3d 0.5.1-beta (fe3ccf79ee58) on 2011-02-23 $
+ * cocos3d 0.6.1
  * Author: Bill Hollings
  * Copyright (c) 2010 The Brenwill Workshop Ltd.
  * http://www.brenwill.com

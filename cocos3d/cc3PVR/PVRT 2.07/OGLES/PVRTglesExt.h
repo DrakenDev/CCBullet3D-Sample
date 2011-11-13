@@ -20,8 +20,15 @@
 ** Build options
 ****************************************************************************/
 #if defined(__APPLE__)
+#ifdef TARGET_OS_IPHONE
 #import <OpenGLES/ES1/gl.h>
 #import <OpenGLES/ES1/glext.h>
+#else
+#include <EGL/egl.h>
+#include <GLES/gl.h>
+#include <GLES/glext.h>
+#endif
+
 #else
 #if defined(__BADA__)
 #include <FGraphicsOpengl2.h>
@@ -42,6 +49,24 @@ using namespace Osp::Graphics::Opengl;
 #define GL_APIENTRY
 #endif
 #define GL_PVRTGLESEXT_VERSION 1
+
+#if defined(__APPLE__) && defined (TARGET_OS_IPHONE)
+#define PVRGetProcAddress(x) ::x
+#else
+#if defined(EGL_NOT_PRESENT) || (defined(__BADA__) && defined(_X86_)) // Bada simulator
+
+#if defined(__PALMPDK__)
+#include "SDL.h"
+
+#define PVRGetProcAddress(x) SDL_GLES_GetProcAddress(#x)
+#else
+#define PVRGetProcAddress(x) NULL
+#endif
+
+#else
+#define PVRGetProcAddress(x) eglGetProcAddress(#x)
+#endif
+#endif
 
 /**************************************************************************
 ****************************** GL EXTENSIONS ******************************
@@ -265,6 +290,11 @@ public:
 	/* GL_EXT_discard_framebuffer */
 	typedef void (GL_APIENTRY * PFNGLDISCARDFRAMEBUFFEREXT)(GLenum target, GLsizei numAttachments, const GLenum *attachments);
 
+	/* GL_OES_vertex_array_object */
+	typedef void (GL_APIENTRY * PFNGLBINDVERTEXARRAYOES) (GLuint vertexarray);
+	typedef void (GL_APIENTRY * PFNGLDELETEVERTEXARRAYSOES) (GLsizei n, const GLuint *vertexarrays);
+	typedef void (GL_APIENTRY * PFNGLGENVERTEXARRAYSOES) (GLsizei n, GLuint *vertexarrays);
+	typedef GLboolean (GL_APIENTRY * PFNGLISVERTEXARRAYOES) (GLuint vertexarray);
 
 	/* Function pointers */
 	PFNGLVERTEXATTRIBPOINTERARB			glVertexAttribPointerARB;
@@ -336,6 +366,13 @@ public:
 
 	/* GL_EXT_discard_framebuffer */
 	PFNGLDISCARDFRAMEBUFFEREXT			glDiscardFramebufferEXT;
+
+	/* GL_OES_vertex_array_object */
+	#define GL_VERTEX_ARRAY_BINDING_OES 0x85B5
+	PFNGLBINDVERTEXARRAYOES glBindVertexArrayOES;
+	PFNGLDELETEVERTEXARRAYSOES glDeleteVertexArraysOES;
+	PFNGLGENVERTEXARRAYSOES glGenVertexArraysOES;
+	PFNGLISVERTEXARRAYOES glIsVertexArrayOES;
 
 	/**************************************************************************
 	****************************** EGL EXTENSIONS *****************************

@@ -190,6 +190,7 @@ EPVRTError PVRTTextureLoadFromPointer(	const void* pointer,
 #else
 	bool bIsBGRA8888Supported  = CPVRTglesExt::IsGLExtensionSupported("GL_APPLE_texture_format_BGRA8888");
 #endif
+
 	*texName = 0;	// install warning value
 	bool bIsCompressedFormatSupported = false, bIsCompressedFormat = false;
 	/* Only accept untwiddled data UNLESS texture format is PVRTC */
@@ -203,6 +204,7 @@ EPVRTError PVRTTextureLoadFromPointer(	const void* pointer,
 	}
 
 	unsigned int ePixelType = psPVRHeader->dwpfFlags & PVRTEX_PIXELTYPE;
+
 	switch(ePixelType)
 	{
 	case OGL_RGBA_4444:
@@ -315,6 +317,7 @@ EPVRTError PVRTTextureLoadFromPointer(	const void* pointer,
 			return PVR_FAIL;
 		}
 		break;
+
 	default:											// NOT SUPPORTED
 		PVRTErrorOutputDebug("PVRTTextureLoadFromPointer failed: pixel type not supported.\n");
 		return PVR_FAIL;
@@ -377,7 +380,7 @@ EPVRTError PVRTTextureLoadFromPointer(	const void* pointer,
 					{
 						/* Load compressed texture data at selected MIP level */
 						glCompressedTexImage2D(GL_TEXTURE_2D, nMIPMapLevel-nLoadFromLevel, eTextureFormat, nSizeX, nSizeY, 0,
-											CompressedImageSize, theTextureToLoad);
+										CompressedImageSize, theTextureToLoad);
 
 					}
 					else

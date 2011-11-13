@@ -38,7 +38,7 @@ public:
 	 @Function		Create
 	 @Output		pnVtxNumOut		vertex count
 	 @Output		pVtxOut			Output vertices (program must free() this)
-	 @Modified		pwIdx			index array for triangle list
+	 @Modified		pui32Idx		index array for triangle list
 	 @Input			nVtxNum			vertex count
 	 @Input			pVtx			vertices
 	 @Input			nStride			Size of a vertex (in bytes)
@@ -55,7 +55,7 @@ public:
 	EPVRTError Create(
 		int					* const pnVtxNumOut,
 		char				** const pVtxOut,
-		unsigned short		* const pwIdx,
+		unsigned int		* const pui32Idx,
 		const int			nVtxNum,
 		const char			* const pVtx,
 		const int			nStride,

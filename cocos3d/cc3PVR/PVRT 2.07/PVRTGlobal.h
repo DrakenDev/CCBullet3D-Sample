@@ -22,6 +22,7 @@
 #	define BUILD_OGLES			// patched by Bill Hollings
 #endif							// patched by Bill Hollings
 
+
 /*!***************************************************************************
  Macros
 *****************************************************************************/
@@ -29,7 +30,10 @@
 #define PVRT_MAX(a,b)            (((a) > (b)) ? (a) : (b))
 #define PVRT_CLAMP(x, l, h)      (PVRT_MIN((h), PVRT_MAX((x), (l))))
 
-#if defined(_WIN32) && !defined(UNDER_CE) && !defined(__SYMBIAN32__) && !defined(__BADA__)	/* Windows desktop */
+// avoid warning about unused parameter
+#define PVRT_UNREFERENCED_PARAMETER(x) ((void) x)
+
+#if defined(_WIN32) && !defined(UNDER_CE) && !defined(__SYMBIAN32__) && !defined(__BADA__) && !defined(__QT__)	/* Windows desktop */
 	#define _CRTDBG_MAP_ALLOC
 	#include <windows.h>
 	#include <crtdbg.h>
@@ -61,7 +65,7 @@
 	#define _RPT4(a,b,c,d,e,f)
 #else
 
-#if defined(_WIN32) && !defined(__WINSCW__) && !defined(__BADA__)
+#if defined(_WIN32) && !defined(__WINSCW__) && !defined(__BADA__) && !defined(__QT__)
 
 #else
 #if defined(__linux__) || defined(__APPLE__)

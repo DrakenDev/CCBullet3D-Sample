@@ -36,8 +36,8 @@ struct PVRTShadowVolMEdge {
 };
 
 struct PVRTShadowVolMTriangle {
-	unsigned short		w[3];				/*!< Source indices of the triangle */
-	PVRTShadowVolMEdge	*pE0, *pE1, *pE2;	/*!< Edges of the triangle */
+	unsigned short	w[3];			/*!< Source indices of the triangle */	
+	unsigned int    wE0, wE1, wE2;  /*!< Indices of the edges of the triangle */
 	PVRTVECTOR3	vNormal;			/*!< Triangle normal */
 	int			nWinding;			/*!< BitN = Correct winding for edge N */
 };

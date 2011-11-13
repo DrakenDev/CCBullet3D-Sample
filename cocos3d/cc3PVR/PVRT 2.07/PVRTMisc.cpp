@@ -16,11 +16,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <limits.h>
+#include <math.h>
 #include "PVRTGlobal.h"
 #include "PVRTContext.h"
 #include "PVRTFixedPoint.h"
 #include "PVRTMatrix.h"
 #include "PVRTMisc.h"
+
 
 
 /*!***************************************************************************
@@ -361,6 +364,68 @@ void PVRTDestroySkybox(VERTTYPE* Vertices, VERTTYPE* UVs)
 	delete [] Vertices;
 	delete [] UVs;
 }
+
+/*!***************************************************************************
+ @Function		GetPOTHigher
+ @Input			uiOriginalValue	Base value
+ @Input			iTimesHigher		Multiplier
+ @Description	When iTimesHigher is one, this function will return the closest
+				power-of-two value above the base value.
+				For every increment beyond one for the iTimesHigher value,
+				the next highest power-of-two value will be calculated.
+*****************************************************************************/
+unsigned int GetPOTHigher(unsigned int uiOriginalValue, int iTimesHigher)
+{
+	if(uiOriginalValue == 0 || iTimesHigher < 0)
+	{
+		return 0;
+	}
+
+	unsigned int uiSize = 1;
+	while (uiSize < uiOriginalValue) uiSize *= 2;
+
+	// Keep increasing the POT value until the iTimesHigher value has been met
+	for(int i = 1 ; i < iTimesHigher; ++i)
+	{
+		uiSize *= 2;
+	}
+
+	return uiSize;
+}
+
+/*!***************************************************************************
+ @Function		GetPOTLower
+ @Input			uiOriginalValue	Base value
+ @Input			iTimesLower		Multiplier
+ @Description	When iTimesLower is one, this function will return the closest
+				power-of-two value below the base value.
+				For every increment beyond one for the iTimesLower value,
+				the next lowest power-of-two value will be calculated. The lowest
+				value that can be reached is 1.
+*****************************************************************************/
+// NOTE: This function should be optimised
+unsigned int GetPOTLower(unsigned int uiOriginalValue, int iTimesLower)
+{
+	if(uiOriginalValue == 0 || iTimesLower < 0)
+	{
+		return 0;
+	}
+	unsigned int uiSize = GetPOTHigher(uiOriginalValue,1);
+	uiSize >>= 1;//uiSize /=2;
+
+	for(int i = 1; i < iTimesLower; ++i)
+	{
+		uiSize >>= 1;//uiSize /=2;
+		if(uiSize == 1)
+		{
+			// Lowest possible value has been reached, so break
+			break;
+		}
+	}
+	return uiSize;
+}
+
+
 
 /*****************************************************************************
  End of file (PVRTMisc.cpp)

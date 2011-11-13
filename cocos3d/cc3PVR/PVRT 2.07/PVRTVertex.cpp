@@ -95,6 +95,11 @@ void PVRTVertexRead(
 			pOut[i] = (float)((int*)pData)[i];
 		break;
 
+	case EPODDataUnsignedInt:
+		for(i = 0; i < nCnt; ++i)
+			pOut[i] = (float)((unsigned int*)pData)[i];
+		break;
+
 	case EPODDataByte:
 		for(i = 0; i < nCnt; ++i)
 			pOut[i] = (float)((char*)pData)[i];
@@ -140,10 +145,10 @@ void PVRTVertexRead(
 			unsigned int dwVal = *(unsigned int*)pData;
 			unsigned char v[4];
 
-			v[0] = dwVal >> 24;
-			v[1] = dwVal >> 16;
-			v[2] = dwVal >>  8;
-			v[3] = dwVal >>  0;
+			v[0] = (unsigned char) (dwVal >> 24);
+			v[1] = (unsigned char) (dwVal >> 16);
+			v[2] = (unsigned char) (dwVal >>  8);
+			v[3] = (unsigned char) (dwVal >>  0);
 
 			for(i = 0; i < 4; ++i)
 				pOut[i] = 1.0f / 255.0f * (float)v[i];
@@ -156,10 +161,10 @@ void PVRTVertexRead(
 			unsigned int dwVal = *(unsigned int*)pData;
 			unsigned char v[4];
 
-			v[0] = dwVal >> 16;
-			v[1] = dwVal >>  8;
-			v[2] = dwVal >>  0;
-			v[3] = dwVal >> 24;
+			v[0] = (unsigned char) (dwVal >> 16);
+			v[1] = (unsigned char) (dwVal >>  8);
+			v[2] = (unsigned char) (dwVal >>  0);
+			v[3] = (unsigned char) (dwVal >> 24);
 
 			for(i = 0; i < 4; ++i)
 				pOut[i] = 1.0f / 255.0f * (float)v[i];
@@ -171,10 +176,10 @@ void PVRTVertexRead(
 			unsigned int dwVal = *(unsigned int*)pData;
 			unsigned char v[4];
 
-			v[0] = dwVal >>  0;
-			v[1] = dwVal >>  8;
-			v[2] = dwVal >> 16;
-			v[3] = dwVal >> 24;
+			v[0] = (unsigned char) (dwVal >>  0);
+			v[1] = (unsigned char) (dwVal >>  8);
+			v[2] = (unsigned char) (dwVal >> 16);
+			v[3] = (unsigned char) (dwVal >> 24);
 
 			for(i = 0; i < 4; ++i)
 				pOut[i] = v[i];
@@ -218,6 +223,10 @@ void PVRTVertexRead(
 
 	case EPODDataUnsignedShort:
 		*pV = *(unsigned short*)pData;
+		break;
+
+	case EPODDataUnsignedInt:
+		*pV = *(unsigned int*)pData;
 		break;
 	}
 }
@@ -323,6 +332,11 @@ void PVRTVertexWrite(
 			((int*)pOut)[i] = (int)pData[i];
 		break;
 
+	case EPODDataUnsignedInt:
+		for(i = 0; i < nCnt; ++i)
+			((unsigned int*)pOut)[i] = (unsigned int)pData[i];
+		break;
+
 	case EPODDataByte:
 		for(i = 0; i < nCnt; ++i)
 			((char*)pOut)[i] = (char)pData[i];
@@ -384,7 +398,12 @@ void PVRTVertexWrite(
 		break;
 
 	case EPODDataUnsignedShort:
-		*(unsigned short*)pOut = V;
+		*(unsigned short*)pOut = (unsigned short) V;
+		break;
+
+	case EPODDataUnsignedInt:
+		*(unsigned int*)pOut = V;
+		break;
 	}
 }
 
@@ -514,7 +533,7 @@ void PVRTVertexTangentBitangent(
  @Function			PVRTVertexGenerateTangentSpace
  @Output			pnVtxNumOut			Output vertex count
  @Output			pVtxOut				Output vertices (program must free() this)
- @Modified			pwIdx				input AND output; index array for triangle list
+ @Modified			pui32Idx			input AND output; index array for triangle list
  @Input				nVtxNum				Input vertex count
  @Input				pVtx				Input vertices
  @Input				nStride				Size of a vertex (in bytes)
@@ -542,23 +561,23 @@ void PVRTVertexTangentBitangent(
 					the vertex will be split.
 *****************************************************************************/
 EPVRTError PVRTVertexGenerateTangentSpace(
-	int				* const pnVtxNumOut,
+	unsigned int	* const pnVtxNumOut,
 	char			** const pVtxOut,
-	unsigned short	* const pwIdx,
-	const int		nVtxNum,
+	unsigned int	* const pui32Idx,
+	const unsigned int	nVtxNum,
 	const char		* const pVtx,
-	const int		nStride,
-	const int		nOffsetPos,
+	const unsigned int	nStride,
+	const unsigned int	nOffsetPos,
 	EPVRTDataType	eTypePos,
-	const int		nOffsetNor,
+	const unsigned int	nOffsetNor,
 	EPVRTDataType	eTypeNor,
-	const int		nOffsetTex,
+	const unsigned int	nOffsetTex,
 	EPVRTDataType	eTypeTex,
-	const int		nOffsetTan,
+	const unsigned int	nOffsetTan,
 	EPVRTDataType	eTypeTan,
-	const int		nOffsetBin,
+	const unsigned int	nOffsetBin,
 	EPVRTDataType	eTypeBin,
-	const int		nTriNum,
+	const unsigned int	nTriNum,
 	const float		fSplitDifference)
 {
 	const int cnMaxSharedVtx = 32;
@@ -571,14 +590,14 @@ EPVRTError PVRTVertexGenerateTangentSpace(
 	};
 	SVtxData		*psVtxData;		// Array of desired tangent spaces per vertex
 	SVtxData		*psTSpass;		// Array of *different* tangent spaces desired for current vertex
-	int				nTSpassLen;
+	unsigned int	nTSpassLen;
 	SVtxData		*psVtx, *psCmp;
-	int				nVert, nCurr, i, j;	// Loop counters
-	int				nIdx0, nIdx1, nIdx2;
+	unsigned int	nVert, nCurr, i, j;	// Loop counters
+	unsigned int	nIdx0, nIdx1, nIdx2;
 	float			pfPos0[4], pfPos1[4], pfPos2[4];
 	float			pfTex0[4], pfTex1[4], pfTex2[4];
 	float			pfNor0[4], pfNor1[4], pfNor2[4];
-	unsigned short	*pwIdxNew;		// New index array, this will be copied over the input array
+	unsigned int	*pui32IdxNew;		// New index array, this will be copied over the input array
 
 	// Initialise the outputs
 	*pnVtxNumOut	= 0;
@@ -589,21 +608,21 @@ EPVRTError PVRTVertexGenerateTangentSpace(
 	}
 
 	// Allocate some work space
-	pwIdxNew		= (unsigned short*)malloc(nTriNum * 3 * sizeof(*pwIdxNew));
-	_ASSERT(pwIdxNew);
+	pui32IdxNew		= (unsigned int*)malloc(nTriNum * 3 * sizeof(*pui32IdxNew));
+	_ASSERT(pui32IdxNew);
 	psVtxData		= (SVtxData*)calloc(nVtxNum, sizeof(*psVtxData));
 	_ASSERT(psVtxData);
 	psTSpass		= (SVtxData*)calloc(cnMaxSharedVtx, sizeof(*psTSpass));
 	_ASSERT(psTSpass);
-	if(!pwIdxNew || !psVtxData || !psTSpass)
+	if(!pui32IdxNew || !psVtxData || !psTSpass)
 	{
 		return PVR_FAIL;
 	}
 
 	for(nCurr = 0; nCurr < nTriNum; ++nCurr) {
-		nIdx0 = pwIdx[3*nCurr+0];
-		nIdx1 = pwIdx[3*nCurr+1];
-		nIdx2 = pwIdx[3*nCurr+2];
+		nIdx0 = pui32Idx[3*nCurr+0];
+		nIdx1 = pui32Idx[3*nCurr+1];
+		nIdx2 = pui32Idx[3*nCurr+2];
 
 		_ASSERT(nIdx0 < nVtxNum);
 		_ASSERT(nIdx1 < nVtxNum);
@@ -673,13 +692,13 @@ EPVRTError PVRTVertexGenerateTangentSpace(
 		nTSpassLen = 0;
 
 		// Run through each desired tangent space for this vertex
-		for(nCurr = 0; nCurr < psVtx->n; ++nCurr) {
+		for(nCurr = 0; nCurr < (unsigned int) psVtx->n; ++nCurr) {
 			// Run through the possible vertices we can share with to see if we match
 			for(i = 0; i < nTSpassLen; ++i) {
 				psCmp = &psTSpass[i];
 
 				// Check all the shared vertices which match
-				for(j = 0; j < psCmp->n; ++j) {
+				for(j = 0; j < (unsigned int) psCmp->n; ++j) {
 					if(PVRTMatrixVec3DotProductF(psVtx->pvTan[nCurr], psCmp->pvTan[j]) < fSplitDifference)
 						break;
 					if(PVRTMatrixVec3DotProductF(psVtx->pvBin[nCurr], psCmp->pvBin[j]) < fSplitDifference)
@@ -687,7 +706,7 @@ EPVRTError PVRTVertexGenerateTangentSpace(
 				}
 
 				// Did all the existing vertices match?
-				if(j == psCmp->n) {
+				if(j == (unsigned int) psCmp->n) {
 					// Yes, so add to list
 					_ASSERT(psCmp->n < cnMaxSharedVtx);
 					psCmp->pvTan[psCmp->n] = psVtx->pvTan[nCurr];
@@ -717,7 +736,7 @@ EPVRTError PVRTVertexGenerateTangentSpace(
 			memset(&pfPos0, 0, sizeof(pfPos0));
 			memset(&pfPos1, 0, sizeof(pfPos1));
 
-			for(i = 0; i < psVtx->n; ++i) {
+			for(i = 0; i < (unsigned int) psVtx->n; ++i) {
 				// Sum the tangent & bitangents, so we can average them
 				pfPos0[0] += psVtx->pvTan[i].x;
 				pfPos0[1] += psVtx->pvTan[i].y;
@@ -728,14 +747,14 @@ EPVRTError PVRTVertexGenerateTangentSpace(
 				pfPos1[2] += psVtx->pvBin[i].z;
 
 				// Update triangle indices to use this vtx
-				if(pwIdx[3 * psVtx->pnTri[i] + 0] == nVert) {
-					pwIdxNew[3 * psVtx->pnTri[i] + 0] = *pnVtxNumOut;
+				if(pui32Idx[3 * psVtx->pnTri[i] + 0] == nVert) {
+					pui32IdxNew[3 * psVtx->pnTri[i] + 0] = *pnVtxNumOut;
 
-				} else if(pwIdx[3 * psVtx->pnTri[i] + 1] == nVert) {
-					pwIdxNew[3 * psVtx->pnTri[i] + 1] = *pnVtxNumOut;
+				} else if(pui32Idx[3 * psVtx->pnTri[i] + 1] == nVert) {
+					pui32IdxNew[3 * psVtx->pnTri[i] + 1] = *pnVtxNumOut;
 
-				} else if(pwIdx[3 * psVtx->pnTri[i] + 2] == nVert) {
-					pwIdxNew[3 * psVtx->pnTri[i] + 2] = *pnVtxNumOut;
+				} else if(pui32Idx[3 * psVtx->pnTri[i] + 2] == nVert) {
+					pui32IdxNew[3 * psVtx->pnTri[i] + 2] = *pnVtxNumOut;
 
 				} else {
 					_ASSERT(0);
@@ -748,12 +767,6 @@ EPVRTError PVRTVertexGenerateTangentSpace(
 			if(*pnVtxNumOut >= MAX_VERTEX_OUT) {
 				_RPT0(_CRT_WARN,"PVRTVertexGenerateTangentSpace() ran out of working space! (Too many split vertices)\n");
 				return PVR_FAIL;
-			}
-
-			if(*pnVtxNumOut > 0x0ffff)
-			{
-				_RPT0(_CRT_WARN,"PVRTVertexGenerateTangentSpace() created more vertices than pwIdx can index!\n");
-				return PVR_OVERFLOW;
 			}
 
 			memcpy(&(*pVtxOut)[(*pnVtxNumOut) * nStride], &pVtx[nVert*nStride], nStride);
@@ -770,8 +783,8 @@ EPVRTError PVRTVertexGenerateTangentSpace(
 	*pVtxOut = (char*)realloc(*pVtxOut, *pnVtxNumOut * nStride);
 	_ASSERT(*pVtxOut);
 
-	memcpy(pwIdx, pwIdxNew, nTriNum * 3 * sizeof(*pwIdxNew));
-	FREE(pwIdxNew);
+	memcpy(pui32Idx, pui32IdxNew, nTriNum * 3 * sizeof(*pui32IdxNew));
+	FREE(pui32IdxNew);
 
 	_RPT3(_CRT_WARN, "GenerateTangentSpace(): %d tris, %d vtx in, %d vtx out\n", nTriNum, nVtxNum, *pnVtxNumOut);
 	_ASSERT(*pnVtxNumOut >= nVtxNum);
